@@ -1,2 +1,4 @@
 ATI85/Unix/ati85
 *.o
+obj
+libs/
