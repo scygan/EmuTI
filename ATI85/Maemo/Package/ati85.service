@@ -1,0 +1,4 @@
+# Service description file
+[D-BUS Service]
+Name=com.fms.ati85
+Exec=/usr/bin/ati85 -home /usr/share/ati85

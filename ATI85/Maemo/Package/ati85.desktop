@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.2
+Type=Application
+Name=ATI85
+Exec=/usr/bin/ati85 -home /usr/share/ati85
+Icon=ati85
+X-Window-Icon=ati85
+X-Window-Icon-Dimmed=ati85
+X-HildonDesk-ShowInToolbar=true
+X-Osso-Service=com.fms.ati85
+X-Osso-Type=application/x-executable
+Terminal=false

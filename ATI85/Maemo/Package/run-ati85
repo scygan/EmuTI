@@ -1,0 +1,3 @@
+#!/bin/sh
+/usr/bin/ati85 -home /usr/share/ati85 $@
+
