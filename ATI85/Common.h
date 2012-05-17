@@ -12,9 +12,9 @@
 /*************************************************************/
 void TI85RefreshScreen(Image *Img)
 {
-  static const byte Widths[4] = { 10,12,16,20 };
+  //static const byte Widths[4] = { 10,12,16,20 };
 
-  register byte X,Y,W,Mask,*T;
+  register byte X,Y,/*W,*/Mask,*T;
   register pixel *P;
 
   if(!LCD_ON)
@@ -63,7 +63,7 @@ void TI83RefreshScreen(Image *Img)
 {
   register byte X,Y,Mask,*T;
   register pixel *P;
-  register int Z;
+//  register int Z;
 
   if(!(LCD.Status&TI83LCD_ON))
     ClearImage(Img,XPal[0]);

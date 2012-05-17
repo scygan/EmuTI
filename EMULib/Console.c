@@ -397,13 +397,16 @@ static const char *nth(const char *S,int N)
 }
 
 #ifndef _MSC_VER
+#if 0
 static int stricmp(const char *S1,const char *S2)
 {
   while(*S1&&(toupper(*S1)==toupper(*S2))) { ++S1;++S2; }
   return(toupper(*S1)-toupper(*S2));
 }
+#endif
 #endif /* _MSC_VER */
 
+#if 0
 static int smartcpy(char *D,const char *S,int N)
 {
   int J;
@@ -428,6 +431,7 @@ static int chomp(char *D,int N)
   for(J=N-1;(J>0)&&(N-J<=3);--J) D[J]='.';
   return(N);
 }
+#endif
 
 void CONSetFont(const unsigned char *Font)
 {
@@ -881,6 +885,7 @@ int CONMenu(int X,int Y,int W,int H,pixel FGColor,pixel BGColor,const char *Item
   return(J!=CON_OK? 0:FileSelect? (int)nth(Items,Top+Item+1):Top+Item+1); 
 }
 
+#if 0
 const char *CONFile(pixel FGColor,pixel BGColor,const char *Ext)
 {
   struct dirent *DP;
@@ -982,5 +987,6 @@ const char *CONFile(pixel FGColor,pixel BGColor,const char *Ext)
   free(Buf);
   return(0);
 }
+#endif
 
 #endif /* BPP32||BPP24||BPP16||BPP8 */

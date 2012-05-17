@@ -115,12 +115,14 @@ struct
   { 0,0,0,0,0 }
 };
 
+void SetMouseHandler(void (*Handler)(int X, int Y, int State));
+
 /** InitMachine() ********************************************/
 /** Allocate resources needed by machine-dependent code.    **/
 /*************************************************************/
 int InitMachine(void)
 {
-  int J;
+//  int J;
 
   /* Initialize variables */
   UseZoom       = UseZoom<1? 1:UseZoom>5? 5:UseZoom;
@@ -213,7 +215,7 @@ int ShowBackdrop(const char *FileName)
   /* Not loading backdrop image for now */
   unsigned char* buffer;
   unsigned char* image;
-  size_t buffersize, imagesize, i;
+  size_t buffersize, imagesize;// i;
   LodePNG_Decoder decoder;
   
   // Load the image file with given filename.
@@ -243,8 +245,8 @@ int ShowBackdrop(const char *FileName)
   unsigned char *Q = image;
     
   for (j = HEIGHT * WIDTH; j; j--) {
-      *P++ = X11GetColor(*Q++,*Q++,*Q++);
-      Q++;
+      *P++ = X11GetColor(*Q,*(Q+1),*(Q+2));
+      Q+=4;
   }
 
   // Cleanup decoder
@@ -361,7 +363,7 @@ void HandleKeys(unsigned int Key)
 void HandleMouse(int X, int Y, int State)
 {
     int J;
-    int Flags = State ? 0:CON_RELEASE;
+    //int Flags = State ? 0:CON_RELEASE;
     for(J=0;TouchMap[J].W;++J)
       if((X>=TouchMap[J].X)&&(Y>=TouchMap[J].Y))
         if((X<TouchMap[J].X+TouchMap[J].W)&&(Y<TouchMap[J].Y+TouchMap[J].H))

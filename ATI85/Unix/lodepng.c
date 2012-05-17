@@ -2875,7 +2875,7 @@ static void decodeGeneric(LodePNG_Decoder* decoder, unsigned char** out, size_t*
       {
         if(chunkLength != 1) { decoder->error = 43; break; } /*error: this chunk must be 1 byte for indexed color image*/
         decoder->infoPng.background_defined = 1;
-        decoder->infoPng.background_r = decoder->infoPng.background_g = decoder->infoPng.background_g = data[0];
+        decoder->infoPng.background_r = decoder->infoPng.background_g /*= decoder->infoPng.background_g*/ = data[0];
       }
       else if(decoder->infoPng.color.colorType == 0 || decoder->infoPng.color.colorType == 4)
       {
@@ -3996,6 +3996,7 @@ unsigned LodePNG_encode32(unsigned char** out, size_t* outsize, const unsigned c
 }
 
 #ifdef LODEPNG_COMPILE_DISK
+#if 0
 unsigned LodePNG_encode32f(const char* filename, const unsigned char* image, unsigned w, unsigned h)
 {
   unsigned char* buffer;
@@ -4005,6 +4006,7 @@ unsigned LodePNG_encode32f(const char* filename, const unsigned char* image, uns
   free(buffer);
   return error;
 }
+#endif
 #endif /*LODEPNG_COMPILE_DISK*/
 
 void LodePNG_EncodeSettings_init(LodePNG_EncodeSettings* settings)
@@ -4079,6 +4081,7 @@ unsigned LodePNG_loadFile(unsigned char** out, size_t* outsize, const char* file
   return 0;
 }
 
+#if 0
 /*write given buffer to the file, overwriting the file, it doesn't append to it.*/
 unsigned LodePNG_saveFile(const unsigned char* buffer, size_t buffersize, const char* filename)
 {
@@ -4089,6 +4092,7 @@ unsigned LodePNG_saveFile(const unsigned char* buffer, size_t buffersize, const 
   fclose(file);
   return 0;
 }
+#endif
 
 #endif /*LODEPNG_COMPILE_DISK*/
 

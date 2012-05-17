@@ -21,6 +21,7 @@
 #include <ctype.h>
 
 #ifdef ZLIB
+#define FILE_HANDLE gzFile
 #include <zlib.h>
 #define fopen           gzopen
 #define fclose          gzclose
@@ -30,6 +31,8 @@
 #define rewind          gzrewind
 #define fgetc           gzgetc
 #define ftell           gztell
+#else
+#define FILE_HANDLE FILE*
 #endif
 
 /** User-defined parameters for ATI85 ************************/
@@ -233,7 +236,7 @@ void TrashTI85()
 /*************************************************************/
 int ResetTI85(int NewMode)
 {
-  FILE *F;
+  FILE_HANDLE F;
   int J,M;
 
   /* Figure out configuration */
@@ -247,12 +250,12 @@ int ResetTI85(int NewMode)
 
     /* Save current directory and switch to ProgDir */
     WorkDir = ProgDir? getcwd(0,1024):0;
-    if(ProgDir) chdir(ProgDir);
+    if(ProgDir) if (!chdir(ProgDir)) {}
 
     /* Try loading ROM file */
     J=0;
     if(Verbose) printf("Loading %s...",Config[M].ROMFile);
-    if(F=fopen(Config[M].ROMFile,"rb"))
+    if((F=fopen(Config[M].ROMFile,"rb")))
     {
       J = fread(ROM,1,Config[M].ROMSize,F);
       J = (J==Config[M].ROMSize);
@@ -261,7 +264,7 @@ int ResetTI85(int NewMode)
     if(Verbose) puts(J? "OK":"FAILED");
 
     /* Get back to the current directory */
-    if(WorkDir) { chdir(WorkDir);free(WorkDir); }
+    if(WorkDir) { if(!chdir(WorkDir)) {};free(WorkDir); }
 
     /* If failed loading ROM file, default to previous model */
     if(!J) NewMode=(NewMode&~ATI_MODEL)|(Mode&ATI_MODEL);
@@ -382,7 +385,7 @@ int ResetTI85(int NewMode)
 /*************************************************************/
 int SaveSTA(const char *FileName)
 {
-  FILE *F;
+  FILE_HANDLE F;
 
   /* Open state file */
   F=fopen(FileName,"wb");
@@ -410,7 +413,7 @@ int SaveSTA(const char *FileName)
 /*************************************************************/
 int LoadSTA(const char *FileName)
 {
-  FILE *F;
+  FILE_HANDLE F;
   int J;
 
   /* Open state file */
@@ -618,7 +621,7 @@ byte InZ80(word Port)
 /*************************************************************/
 void OutZ80(word Port,byte V)
 {
-  byte Vin,Vout;
+  //byte Vin,Vout;
 
   /* Simulate different models on different port ranges */
   Port=(Port&0xFF)|(Mode&ATI_MODEL);

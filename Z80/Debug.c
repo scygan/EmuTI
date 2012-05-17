@@ -270,23 +270,23 @@ static int DAsm(char *S,word A)
     default:   T=Mnemonics[RdZ80(B++)];
   }
 
-  if(P=strchr(T,'^'))
+  if((P=strchr(T,'^')))
   {
     strncpy(R,T,P-T);R[P-T]='\0';
     sprintf(H,"%02X",RdZ80(B++));
     strcat(R,H);strcat(R,P+1);
   }
   else strcpy(R,T);
-  if(P=strchr(R,'%')) *P=C;
+  if((P=strchr(R,'%'))) *P=C;
 
-  if(P=strchr(R,'*'))
+  if((P=strchr(R,'*')))
   {
     strncpy(S,R,P-R);S[P-R]='\0';
     sprintf(H,"%02X",RdZ80(B++));
     strcat(S,H);strcat(S,P+1);
   }
   else
-    if(P=strchr(R,'@'))
+    if((P=strchr(R,'@')))
     {
       strncpy(S,R,P-R);S[P-R]='\0';
       if(!J) Offset=RdZ80(B++);
@@ -296,7 +296,7 @@ static int DAsm(char *S,word A)
       strcat(S,H);strcat(S,P+1);
     }
     else
-      if(P=strchr(R,'#'))
+      if((P=strchr(R,'#')))
       {
         strncpy(S,R,P-R);S[P-R]='\0';
         sprintf(H,"%04X",RdZ80(B)+256*RdZ80(B+1));
@@ -341,7 +341,7 @@ byte DebugZ80(Z80 *R)
     printf("\n[Command,'?']-> ");
     fflush(stdout);fflush(stdin);
 
-    fgets(S,50,stdin);
+    if (!fgets(S,50,stdin)) {}
     for(J=0;S[J]>=' ';J++)
       S[J]=toupper(S[J]);
     S[J]='\0';

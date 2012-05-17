@@ -127,6 +127,8 @@ void TrashUnix(void)
   }
 }
 
+void PrintXY(Image *Img,const char *S,int X,int Y,pixel FG,int BG);
+
 /** ShowVideo() **********************************************/
 /** Show "active" image at the actual screen or window.     **/
 /*************************************************************/
@@ -225,7 +227,7 @@ int ShowVideo(void)
     char S[8];
     sprintf(S,"%dfps",FrameRate);
     PrintXY(
-      OutImg,S,
+      &OutImg,S,
       ((OutImg.W-VideoW)>>1)+8,((OutImg.H-VideoH)>>1)+8,
       FPS_COLOR,-1
     );
@@ -280,7 +282,8 @@ unsigned int GetJoystick(void)
 /*************************************************************/
 unsigned int GetMouse(void)
 {
-  int X,Y,J,Mask;
+  int X,Y,J;
+  uint Mask;
   Window W;
 
   /* Need to have a display and a window */
@@ -547,6 +550,8 @@ Image *CropImage(Image *Dst,const Image *Src,int X,int Y,int W,int H)
   Dst->Attrs   = 0;
   return(Dst);
 }
+
+void GenericSetVideo(Image *Img,int X,int Y,int W,int H);
 
 /** SetVideo() ***********************************************/
 /** Set part of the image as "active" for display.          **/

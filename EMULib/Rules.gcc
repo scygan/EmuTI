@@ -14,7 +14,7 @@ DEFINES = -DZLIB
 LIBS    = -lz -lpthread
 
 # EMULib sound, console, and other utility functions 
-OBJECTS	= $(EMULIB)/EMULib.o $(EMULIB)/Image.o $(EMULIB)/Console.o $(EMULIB)/Touch.o
+OBJECTS	= $(EMULIB)/EMULib.o $(EMULIB)/Image.o $(EMULIB)/Console.o
 
 # Platform-specific EMULib files
 EMUUNIX	= $(EMULIB)/Unix/LibUnix.o 
