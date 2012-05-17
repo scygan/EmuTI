@@ -361,14 +361,6 @@ const char *GetFilePath(const char *Name);
 /*************************************************************/
 const char *NewFile(const char *Pattern);
 
-/** ChangeDir() **********************************************/
-/** This function is a wrapper for chdir(). Unlike chdir(), **/
-/** it changes *both* the drive and the directory in MSDOS, **/
-/** exactly like the "normal" chdir() should. Returns 0 on  **/
-/** success, -1 on failure, just like chdir().              **/
-/*************************************************************/
-int ChangeDir(const char *Name);
-
 #ifdef GIFLIB
 /** LoadGIF() ************************************************/
 /** Load screen from .GIF file. Returns the number of used  **/

@@ -414,11 +414,6 @@ int SetSyncTimer(int Hz)
   return(1);
 }
 
-/** ChangeDir() **********************************************/
-/** This function is a wrapper for chdir().                 **/
-/*************************************************************/
-int ChangeDir(const char *Name) { return(chdir(Name)); }
-
 /** NewImage() ***********************************************/
 /** Create a new image of the given size. Returns pointer   **/
 /** to the image data on success, 0 on failure.             **/

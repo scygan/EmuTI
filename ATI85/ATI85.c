@@ -51,8 +51,6 @@ int main(int argc,char *argv[])
 #if defined(MSDOS) || defined(WINDOWS)
   /* No separate console, so no messages */
   Verbose=0;
-  /* Figure out program directory name */
-  ProgDir=GetFilePath(argv[0]);
 #else
   Verbose=5;
 #endif
@@ -95,11 +93,6 @@ int main(int argc,char *argv[])
 	case 11: printf("%s by Marat Fayzullin    (C)FMS 1994-2009\n",Title);
                  for(J=0;HelpText[J];J++) puts(HelpText[J]);
                  return(0);
-        case 12: N++;
-                 if(N>=argc)
-                   printf("%s: No home directory name supplied\n",argv[0]);
-                 else
-                   ProgDir=argv[N];
                  break;
         case 13: N++;
                  if(N>=argc)

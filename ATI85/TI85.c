@@ -56,7 +56,6 @@ byte StartupOn;              /* [ON] key counter on startup  */
 /*************************************************************/
 
 /** Working directory names, etc. ****************************/
-const char *ProgDir  = 0;          /* Program directory      */
 const char *LinkPeer = 0;          /* Link peer IP address   */
 int LinkPort         = 8385;       /* Link peer IP port      */
 /*************************************************************/
@@ -246,12 +245,6 @@ int ResetTI85(int NewMode)
   /* If calculator model changed... */
   if((Mode^NewMode)&ATI_MODEL)
   {
-    char *WorkDir;
-
-    /* Save current directory and switch to ProgDir */
-    WorkDir = ProgDir? getcwd(0,1024):0;
-    if(ProgDir) if (!chdir(ProgDir)) {}
-
     /* Try loading ROM file */
     J=0;
     if(Verbose) printf("Loading %s...",Config[M].ROMFile);
@@ -262,9 +255,6 @@ int ResetTI85(int NewMode)
       fclose(F);
     }
     if(Verbose) puts(J? "OK":"FAILED");
-
-    /* Get back to the current directory */
-    if(WorkDir) { if(!chdir(WorkDir)) {};free(WorkDir); }
 
     /* If failed loading ROM file, default to previous model */
     if(!J) NewMode=(NewMode&~ATI_MODEL)|(Mode&ATI_MODEL);
