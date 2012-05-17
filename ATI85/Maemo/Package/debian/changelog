@@ -1,5 +1,0 @@
-ati85 (1.3.2-1) stable; urgency=low
-
-  * Temporarily disabled serial link code (not yet ready).
-
- -- Marat Fayzullin <marat@komkon.org>  Fri, 10 Apr 2009 13:51:56 -0500

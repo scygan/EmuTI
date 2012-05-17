@@ -14,15 +14,10 @@ DEFINES = -DZLIB
 LIBS    = -lz -lpthread
 
 # EMULib sound, console, and other utility functions 
-OBJECTS	= $(EMULIB)/EMULib.o $(EMULIB)/Sound.o \
-	  $(EMULIB)/Image.o $(EMULIB)/Console.o \
-	  $(EMULIB)/NetPlay.o $(EMULIB)/Touch.o
+OBJECTS	= $(EMULIB)/EMULib.o $(EMULIB)/Image.o $(EMULIB)/Console.o $(EMULIB)/Touch.o
 
 # Platform-specific EMULib files
-EMUUNIX	= $(EMULIB)/Unix/LibUnix.o $(EMULIB)/Unix/SndUnix.o \
-	  $(EMULIB)/Unix/NetUnix.o
-EMUMAEMO= $(EMULIB)/Maemo/LibMaemo.o $(EMULIB)/Unix/SndUnix.o \
-	  $(EMULIB)/Unix/NetUnix.o $(EMULIB)/LibARM-BPP16.o
+EMUUNIX	= $(EMULIB)/Unix/LibUnix.o 
 
 # .INI file access library
 INIFILE	= $(EMULIB)/INIFile.o

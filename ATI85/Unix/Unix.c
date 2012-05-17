@@ -33,8 +33,8 @@ int UseZoom     = 1;       /* Zoom factor (1=no zoom)        */
 int UseSound    = 22050;   /* Audio sampling frequency (Hz)  */
 int SyncFreq    = 60;      /* Sync frequency (0=sync off)    */
 int FastForward;           /* Fast-forwarded UPeriod backup  */
-int SndSwitch;             /* Mask of enabled sound channels */
-int SndVolume;             /* Master volume for audio        */
+//int SndSwitch;           /* Mask of enabled sound channels */
+//int SndVolume;           /* Master volume for audio        */
 byte KeyReady;             /* 1: Key has been pressed        */
 Image OutImage;            /* Unix display image buffer      */
 Image ScrImage;            /* TI85 display image buffer      */
@@ -154,10 +154,10 @@ int InitMachine(void)
   SetMouseHandler(HandleMouse);
 
   /* Initialize sound */
-  InitSound(UseSound,150);
-  SndSwitch=(1<<4)-1;
-  SndVolume=255/4;
-  SetChannels(SndVolume,SndSwitch);
+//InitSound(UseSound,150);
+//SndSwitch=(1<<4)-1;
+//SndVolume=255/4;
+//SetChannels(SndVolume,SndSwitch);
 
   /* Initialize sync timer if needed */
   if((SyncFreq>0)&&!SetSyncTimer(SyncFreq*UPeriod/100)) SyncFreq=0;
@@ -172,7 +172,7 @@ int InitMachine(void)
 void TrashMachine(void)
 {
   FreeImage(&OutImage);
-  TrashAudio();
+//TrashAudio();
   TrashUnix();
 }
 

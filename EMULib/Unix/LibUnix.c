@@ -28,8 +28,8 @@
 
 #define FPS_COLOR PIXEL(255,0,255)
 
-extern int MasterSwitch; /* Switches to turn channels on/off */
-extern int MasterVolume; /* Master volume                    */
+//extern int MasterSwitch; /* Switches to turn channels on/off */
+//extern int MasterVolume; /* Master volume                    */
 
 static volatile int TimerReady = 0;   /* 1: Sync timer ready */
 static volatile unsigned int JoyState = 0; /* Joystick state */
@@ -111,7 +111,7 @@ void TrashUnix(void)
   /* Remove sync timer */
   SetSyncTimer(0);
   /* Shut down audio */
-  TrashAudio();
+//TrashAudio();
   /* Free output image buffer */
   FreeImage(&OutImg);
 
@@ -640,7 +640,7 @@ void X11ProcessEvents(void)
           if(KeyModes&CON_ALT)
           {
             /* Volume up */
-            SetChannels(MasterVolume<247? MasterVolume+8:255,MasterSwitch);
+//            SetChannels(MasterVolume<247? MasterVolume+8:255,MasterSwitch);
             /* Key swallowed */
             J=0;
           } 
@@ -650,7 +650,7 @@ void X11ProcessEvents(void)
           if(KeyModes&CON_ALT)
           {
             /* Volume down */
-            SetChannels(MasterVolume>8? MasterVolume-8:0,MasterSwitch);
+//            SetChannels(MasterVolume>8? MasterVolume-8:0,MasterSwitch);
             /* Key swallowed */
             J=0;
           } 
@@ -711,16 +711,16 @@ void X11ProcessEvents(void)
   if((Effects&EFF_SAVECPU)&&(E.type==FocusOut))
   {
     /* Pause audio */
-    J=MasterSwitch;
-    SetChannels(MasterVolume,0);
-    PauseAudio(1);
+//    J=MasterSwitch;
+//    SetChannels(MasterVolume,0);
+//    PauseAudio(1);
     /* Wait for focus-in event */  
     do
       while(!XCheckWindowEvent(Dsp,Wnd,FocusChangeMask,&E)&&VideoImg) sleep(1);
     while((E.type!=FocusIn)&&VideoImg);
     /* Resume audio */
-    PauseAudio(0);
-    SetChannels(MasterVolume,J);
+//    PauseAudio(0);
+//    SetChannels(MasterVolume,J);
   }
 
   /* If window has been resized, remove current output buffer */
