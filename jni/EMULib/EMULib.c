@@ -18,14 +18,14 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-#if defined(WINDOWS) || defined(UNIX) || defined(MAEMO)
+#if defined(WINDOWS) || defined(UNIX) || defined(MAEMO) || defined(ANDROID)
 #define NewImage  GenericNewImage
 #define FreeImage GenericFreeImage
 #define CropImage GenericCropImage
 extern Image BigScreen;
 #endif
 
-#if defined(UNIX) || defined(MAEMO)
+#if defined(UNIX) || defined(MAEMO) || defined (ANDROID)
 #define SetVideo  GenericSetVideo
 #endif
 

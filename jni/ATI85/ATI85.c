@@ -11,7 +11,7 @@
 /**     changes to this file.                               **/
 /*************************************************************/
 
-#include "EMULib.h"
+#include "../EMULib/EMULib.h"
 #include "TI85.h"
 #include "Help.h"
 

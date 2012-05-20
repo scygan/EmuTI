@@ -10,8 +10,8 @@
 /**     commercially. Please, notify me, if you make any    **/
 /**     changes to this file.                               **/
 /*************************************************************/
-#include "EMULib.h"
-#include "Sound.h"
+#include "../EMULib.h"
+#include "LibUnix.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -38,10 +38,10 @@ static volatile unsigned int KeyModes = 0; /* SHIFT/CTRL/ALT */
 
 static int Effects    = EFF_SCALE|EFF_SAVECPU; /* EFF_* bits */
 static int TimerON    = 0; /* 1: sync timer is running       */
-static Display *Dsp   = 0; /* X11 display                    */
-static Screen *Scr    = 0; /* X11 screen                     */
-static Window Wnd     = 0; /* X11 window                     */
-static Colormap CMap;      /* X11 color map                  */
+//static Display *Dsp   = 0; /* X11 display                    */
+//static Screen *Scr    = 0; /* X11 screen                     */
+//static Window Wnd     = 0; /* X11 window                     */
+//static Colormap CMap;      /* X11 color map                  */
 static Image OutImg;       /* Scaled output image buffer     */
 static const char *AppTitle; /* Current window title         */
 static int XSize,YSize;    /* Current window dimensions      */
@@ -76,10 +76,10 @@ int InitUnix(const char *Title,int Width,int Height)
   JoyState    = 0;
   LastKey     = 0;
   KeyModes    = 0;
-  Wnd         = 0;
-  Dsp         = 0;
-  Scr         = 0;
-  CMap        = 0;
+//  Wnd         = 0;
+//  Dsp         = 0;
+//  Scr         = 0;
+//  CMap        = 0;
   FrameCount  = 0;
   FrameRate   = 0;
 
@@ -87,17 +87,17 @@ int InitUnix(const char *Title,int Width,int Height)
   gettimeofday(&TimeStamp,0);
 
   /* No output image yet */
-  OutImg.XImg            = 0;
+//  OutImg.XImg            = 0;
 #ifdef MITSHM
-  OutImg.SHMInfo.shmaddr = 0;
+//  OutImg.SHMInfo.shmaddr = 0;
 #endif
 
   /* Open X11 display */
-  if(!(Dsp=XOpenDisplay(0))) return(0);
+//if(!(Dsp=XOpenDisplay(0))) return(0);
 
   /* Get default screen and color map */
-  Scr  = DefaultScreenOfDisplay(Dsp);
-  CMap = DefaultColormapOfScreen(Scr);
+//Scr  = DefaultScreenOfDisplay(Dsp);
+//CMap = DefaultColormapOfScreen(Scr);
 
   /* Done */
   return(1);
@@ -116,14 +116,14 @@ void TrashUnix(void)
   FreeImage(&OutImg);
 
   /* If X11 display open... */
-  if(Dsp)
+//if(Dsp)
   {
     /* Close the window */
-    if(Wnd) { XDestroyWindow(Dsp,Wnd);Wnd=0; }
+//  if(Wnd) { XDestroyWindow(Dsp,Wnd);Wnd=0; }
     /* Done with display */
-    XCloseDisplay(Dsp);
+//  XCloseDisplay(Dsp);
     /* Display now closed */
-    Dsp=0;
+//  Dsp=0;
   }
 }
 
@@ -138,31 +138,31 @@ int ShowVideo(void)
   int SX,SY;
 
   /* Must have active video image, X11 display */
-  if(!Dsp||!VideoImg||!VideoImg->Data) return(0);
+//  if(!Dsp||!VideoImg||!VideoImg->Data) return(0);
 
   /* If no window yet... */
-  if(!Wnd)
+//  if(!Wnd)
   {
     /* Create new window */
-    Wnd=X11Window(AppTitle? AppTitle:"EMULib",XSize,YSize);
-    if(!Wnd) return(0);
+  //  Wnd=X11Window(AppTitle? AppTitle:"EMULib",XSize,YSize);
+//    if(!Wnd) return(0);
   }
 
   /* Allocate image buffer if none */
   if(!OutImg.Data&&!NewImage(&OutImg,XSize,YSize)) return(0);
 
   /* Wait for all X11 requests to complete, to avoid flicker */
-  XSync(Dsp,False);
+  //XSync(Dsp,False);
 
   /* If not scaling or post-processing image, avoid extra work */
-  if(!(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES)))
+//  if(!(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES)))
   {
 #ifdef MITSHM
-    if(VideoImg->Attrs&EFF_MITSHM)
-      XShmPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH,False);
-    else
+  //  if(VideoImg->Attrs&EFF_MITSHM)
+//      XShmPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH,False);
+//    else
 #endif
-      XPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH);
+//      XPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH);
     return(1);
   }
 
@@ -238,11 +238,11 @@ int ShowVideo(void)
 
   /* Copy image to the window, either using SHM or not */
 #ifdef MITSHM
-  if(VideoImg->Attrs&EFF_MITSHM)
-    XShmPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),Output->XImg,SX,SY,0,0,XSize,YSize,False);
-  else
+//  if(VideoImg->Attrs&EFF_MITSHM)
+//    XShmPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),Output->XImg,SX,SY,0,0,XSize,YSize,False);
+//  else
 #endif
-    XPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),Output->XImg,SX,SY,0,0,XSize,YSize);
+//    XPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),Output->XImg,SX,SY,0,0,XSize,YSize);
 
   /* Done */
   return(1);
@@ -270,7 +270,7 @@ unsigned int GetJoystick(void)
   }
 
   /* Process any pending events */
-  X11ProcessEvents();
+  //X11ProcessEvents();
 
   /* Return current joystick state */
   return(JoyState|KeyModes);
@@ -284,13 +284,13 @@ unsigned int GetMouse(void)
 {
   int X,Y,J;
   uint Mask;
-  Window W;
+//  Window W;
 
   /* Need to have a display and a window */
-  if(!Dsp||!Wnd) return(0);
+  //if(!Dsp||!Wnd) return(0);
 
   /* Query mouse pointer */
-  if(!XQueryPointer(Dsp,Wnd,&W,&W,&J,&J,&X,&Y,&Mask)) return(0);
+//  if(!XQueryPointer(Dsp,Wnd,&W,&W,&J,&J,&X,&Y,&Mask)) return(0);
 
   /* If scaling video... */
   if(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES))
@@ -309,12 +309,13 @@ unsigned int GetMouse(void)
   }
 
   /* Return mouse position and buttons */
-  return(
+/*  return(
     (X&0xFFFF)
   | ((Y&0x3FFF)<<16)
   | (Mask&Button1Mask? 0x40000000:0)
   | (Mask&Button3Mask? 0x80000000:0)
-  );
+  );*/
+  return 0;
 }
 
 /** GetKey() *************************************************/
@@ -325,7 +326,7 @@ unsigned int GetKey(void)
 {
   unsigned int J;
 
-  X11ProcessEvents();
+//  X11ProcessEvents();
   J=LastKey;
   LastKey=0;
   return(J);
@@ -420,7 +421,7 @@ int SetSyncTimer(int Hz)
 /*************************************************************/
 pixel *NewImage(Image *Img,int Width,int Height)
 {
-  XVisualInfo VInfo;
+//  XVisualInfo VInfo;
   int Depth,J,I;
 
   /* Set data fields to ther defaults */
@@ -429,22 +430,22 @@ pixel *NewImage(Image *Img,int Width,int Height)
   Img->H       = 0;
   Img->L       = 0;
   Img->D       = 0;
-  Img->Attrs   = 0;
+//  Img->Attrs   = 0;
   Img->Cropped = 0;
 
   /* Need to initalize library first */
-  if(!Dsp) return(0);
+//  if(!Dsp) return(0);
 
   /* Image depth we are going to use */
-  Depth = Effects&EFF_VARBPP? DefaultDepthOfScreen(Scr):(sizeof(pixel)<<3);
+//  Depth = Effects&EFF_VARBPP? DefaultDepthOfScreen(Scr):(sizeof(pixel)<<3);
 
   /* Get appropriate Visual for this depth */
-  I=XScreenNumberOfScreen(Scr);
+/*  I=XScreenNumberOfScreen(Scr);
   for(J=7;J>=0;J--)
     if(XMatchVisualInfo(Dsp,I,Depth,J,&VInfo)) break;
   if(J<0) return(0);
-
-#ifdef MITSHM
+*/
+#if 0 //def MITSHM
   if(Effects&EFF_MITSHM)
   {
     /* Create shared XImage */
@@ -485,23 +486,23 @@ pixel *NewImage(Image *Img,int Width,int Height)
   else
 #endif
   {
-    /* Create normal XImage */
-    Img->XImg = XCreateImage(Dsp,VInfo.visual,Depth,ZPixmap,0,0,Width,Height,Depth,0);
-    if(!Img->XImg) return(0);
+//  /* Create normal XImage */
+//  Img->XImg = XCreateImage(Dsp,VInfo.visual,Depth,ZPixmap,0,0,Width,Height,Depth,0);
+//  if(!Img->XImg) return(0);
 
     /* Allocate data */
-    Img->XImg->data = (char *)malloc(Img->XImg->bytes_per_line*Img->XImg->height);
-    if(!Img->XImg->data) { XDestroyImage(Img->XImg);return(0); }
+//  Img->XImg->data = (char *)malloc(Img->XImg->bytes_per_line*Img->XImg->height);
+//  if(!Img->XImg->data) { XDestroyImage(Img->XImg);return(0); }
   }
 
   /* Done */
   Depth      = Depth==24? 32:Depth;
-  Img->Data  = (pixel *)Img->XImg->data;
-  Img->W     = Img->XImg->width;
-  Img->H     = Img->XImg->height;
-  Img->L     = Img->XImg->bytes_per_line/(Depth>>3);
+//Img->Data  = (pixel *)Img->XImg->data;
+//  Img->W     = Img->XImg->width;
+//  Img->H     = Img->XImg->height;
+//  Img->L     = Img->XImg->bytes_per_line/(Depth>>3);
   Img->D     = Depth;
-  Img->Attrs = Effects&(EFF_MITSHM|EFF_VARBPP);
+//Img->Attrs = Effects&(EFF_MITSHM|EFF_VARBPP);
   return(Img->Data);
 }
 
@@ -511,9 +512,9 @@ pixel *NewImage(Image *Img,int Width,int Height)
 void FreeImage(Image *Img)
 {
   /* Need to initalize library first */
-  if(!Dsp||!Img->Data) return;
+//  if(!Dsp||!Img->Data) return;
 
-#ifdef MITSHM
+#if 0 //def MITSHM
   /* Detach shared memory segment */
   if((Img->Attrs&EFF_MITSHM)&&Img->SHMInfo.shmaddr)
   { XShmDetach(Dsp,&Img->SHMInfo);shmdt(Img->SHMInfo.shmaddr); }
@@ -521,7 +522,7 @@ void FreeImage(Image *Img)
 #endif
 
   /* Get rid of the image */
-  if(Img->XImg) { XDestroyImage(Img->XImg);Img->XImg=0; }
+//  if(Img->XImg) { XDestroyImage(Img->XImg);Img->XImg=0; }
 
   /* Image freed */
   Img->Data = 0;
@@ -541,8 +542,8 @@ Image *CropImage(Image *Dst,const Image *Src,int X,int Y,int W,int H)
   Dst->H       = H;
   Dst->L       = Src->L;
   Dst->D       = Src->D;
-  Dst->XImg    = 0;
-  Dst->Attrs   = 0;
+//  Dst->XImg    = 0;
+//  Dst->Attrs   = 0;
   return(Dst);
 }
 
@@ -554,7 +555,7 @@ void GenericSetVideo(Image *Img,int X,int Y,int W,int H);
 void SetVideo(Image *Img,int X,int Y,int W,int H)
 {
   /* If video exists, modify its size */
-  if(Dsp&&VideoW&&VideoH)
+  if(/*Dsp&&*/VideoW&&VideoH)
   {
     int DW,DH,SW,SH;
 
@@ -566,7 +567,7 @@ void SetVideo(Image *Img,int X,int Y,int W,int H)
     XSize = XSize*DW/SW;
     YSize = YSize*DH/SH;
 
-    if(Wnd) XResizeWindow(Dsp,Wnd,XSize,YSize);
+  //  if(Wnd) XResizeWindow(Dsp,Wnd,XSize,YSize);
     FreeImage(&OutImg);
   }
 
@@ -583,6 +584,7 @@ void X11SetEffects(int NewEffects)
   Effects=NewEffects;
 }
 
+#if 0
 /** X11ProcessEvents() ***************************************/
 /** Process X11 event messages.                             **/
 /*************************************************************/
@@ -733,6 +735,7 @@ void X11ProcessEvents(void)
       YSize=E.xconfigure.height;
     }
 }
+#endif
 
 /** X11GetColor **********************************************/
 /** Get pixel for the current screen depth based on the RGB **/
@@ -743,10 +746,10 @@ unsigned int X11GetColor(unsigned char R,unsigned char G,unsigned char B)
   int J;
 
   /* If using constant BPP, just return a pixel */
-  if(!Dsp||!(Effects&EFF_VARBPP)) return(PIXEL(R,G,B));
+  if(/*!Dsp||*/!(Effects&EFF_VARBPP)) return(PIXEL(R,G,B));
 
   /* If variable BPP, compute pixel based on the screen depth */
-  J=DefaultDepthOfScreen(Scr);
+//J=DefaultDepthOfScreen(Scr);
   return(
     J<=8?  (((7*(R)/255)<<5)|((7*(G)/255)<<2)|(3*(B)/255))
   : J<=16? (((31*(R)/255)<<11)|((63*(G)/255)<<5)|(31*(B)/255))
@@ -755,6 +758,7 @@ unsigned int X11GetColor(unsigned char R,unsigned char G,unsigned char B)
   );  
 }
 
+#if 0
 /** X11Window() **********************************************/
 /** Open a window of a given size with a given title.       **/
 /*************************************************************/
@@ -829,3 +833,4 @@ Window X11Window(const char *Title,int Width,int Height)
   /* Done */
   return(Wnd);
 }
+#endif

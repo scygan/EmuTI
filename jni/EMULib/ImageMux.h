@@ -53,7 +53,7 @@
 
 #define BPP16
 #define pixel           unsigned short
-#if defined(UNIX) || defined(S60) || defined(UIQ) || defined(NXC2600) || defined(STMP3700)
+#if defined(UNIX) || defined(S60) || defined(UIQ) || defined(NXC2600) || defined(STMP3700) || defined (ANDROID)
 /* Symbian and Unix use true 16BPP color */
 #define PIXEL(R,G,B)    (pixel)(((31*(R)/255)<<11)|((63*(G)/255)<<5)|(31*(B)/255))
 #define RMASK           0xF800

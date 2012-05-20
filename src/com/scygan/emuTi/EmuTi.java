@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.scygan.emuTI.plasma;
+package com.scygan.emuTi;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -42,14 +42,14 @@ class EmuTiView extends View {
     private Bitmap mBitmap;
     private long mStartTime;
 
-    /* implementend by libplasma.so */
+    /* Implemented by libemuti.so */
     private static native void renderEmuTi(Bitmap  bitmap, long time_ms);
 
     public EmuTiView(Context context) {
         super(context);
 
-        final int W = 200;
-        final int H = 200;
+        final int W = 400;
+        final int H = 400;
 
         mBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.RGB_565);
         mStartTime = System.currentTimeMillis();

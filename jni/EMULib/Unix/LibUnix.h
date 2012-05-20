@@ -13,18 +13,6 @@
 #ifndef LIBUNIX_H
 #define LIBUNIX_H
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
-
-#ifdef MITSHM
-#include <X11/extensions/XShm.h>
-#endif
-
-/* X11 defines "Status" to be "int" but this may shadow some */
-/* of our application variables!                             */
-#undef Status
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -103,7 +91,7 @@ int PauseAudio(int Switch);
 /** X11Window() **********************************************/
 /** Open a window of a given size with a given title.       **/
 /*************************************************************/
-Window X11Window(const char *Title,int Width,int Height);
+//Window X11Window(const char *Title,int Width,int Height);
 
 /** X11GetColor **********************************************/
 /** Get pixel for the current screen depth based on the RGB **/

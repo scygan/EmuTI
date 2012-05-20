@@ -28,6 +28,7 @@
 #define  LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 
 /* Set to 1 to enable debug log traces. */
+#undef DEBUG
 #define DEBUG 0
 
 /* Set to 1 to optimize memory stores when generating plasma. */
@@ -361,7 +362,7 @@ stats_endFrame( Stats*  s )
     s->lastTime = now;
 }
 
-JNIEXPORT void JNICALL Java_com_example_plasma_PlasmaView_renderPlasma(JNIEnv * env, jobject  obj, jobject bitmap,  jlong  time_ms)
+JNIEXPORT void JNICALL Java_com_scygan_emuTi_EmuTiView_renderEmuTi(JNIEnv * env, jobject  obj, jobject bitmap,  jlong  time_ms)
 {
     AndroidBitmapInfo  info;
     void*              pixels;

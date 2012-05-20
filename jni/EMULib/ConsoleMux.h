@@ -339,6 +339,7 @@ int CONMenu(int X,int Y,int W,int H,pixel FGColor,pixel BGColor,const char *Item
 /** CONFile() ************************************************/
 /** Show a file selector.                                   **/
 /*************************************************************/
+#if 0
 const char *CONFile(pixel FGColor,pixel BGColor,const char *Ext)
 {
   if(VideoImg)
@@ -352,5 +353,6 @@ const char *CONFile(pixel FGColor,pixel BGColor,const char *Ext)
 
   return(0);
 }
+#endif
 
 #endif /* CONSOLEMUX_H */

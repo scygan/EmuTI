@@ -10,10 +10,11 @@
 /**     commercially. Please, notify me, if you make any    **/
 /**     changes to this file.                               **/
 /*************************************************************/
-#include "TI85.h"
-#include "Console.h"
-#include "EMULib.h"
-#include "Sound.h"
+#include "../TI85.h"
+#include "../../EMULib/Console.h"
+#include "../../EMULib/EMULib.h"
+#include "../../EMULib/Unix/LibUnix.h"
+//#include "Sound.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -201,7 +202,7 @@ void PutImage(void)
 /*************************************************************/
 byte Keypad(void)
 {
-  X11ProcessEvents();
+//  X11ProcessEvents();
   return(IS_KBD(KBD_ON));
 }
 
@@ -262,7 +263,7 @@ int ShowBackdrop(const char *FileName)
 void HandleKeys(unsigned int Key)
 {
   if(InMenu||CPU.Trace) return;
-
+#if 0
   if(Key&CON_RELEASE)
     switch(Key&CON_KEYCODE)
     {
@@ -355,6 +356,7 @@ void HandleKeys(unsigned int Key)
         if((Key>=' ')&&(Key<0x80)) { KBD_SET(Key);KeyReady=1; }
         break; 
     }
+#endif
 }
 
 /** HandleMouse() *********************************************/
@@ -379,6 +381,6 @@ void HandleMouse(int X, int Y, int State)
 /** Common.h *************************************************/
 /** Common display drivers.                                 **/
 /*************************************************************/
-#include "Common.h"
+#include "../Common.h"
 
 
