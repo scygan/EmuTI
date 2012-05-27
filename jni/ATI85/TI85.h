@@ -16,7 +16,7 @@
 
 #include "../Z80/Z80.h"        /* Z80 CPU emulation          */
 
-#define PAGESIZE  0x4000       /* Size of a RAM page         */
+//#define PAGESIZE  0x4000       /* Size of a RAM page         */
 #define NORAM     0xFF         /* Byte to be returned from   */
                                /* non-existing addresses     */
 

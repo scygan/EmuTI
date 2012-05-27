@@ -1,4 +1,5 @@
-ATI85/Unix/ati85
-*.o
-obj
+obj/
 libs/
+bin/
+local.properties
+gen/

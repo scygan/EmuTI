@@ -181,9 +181,9 @@ int StartTI85(char *RAMName)
   }
 
   /* Allocate memory for RAM/ROM */
-  if(Verbose) printf("Allocating %dkB+%dkB for RAM+ROM...",I>>10,K>>10);
+  if(Verbose) LOGI("Allocating %dkB+%dkB for RAM+ROM...",I>>10,K>>10);
   RAM=(byte *)malloc(I+K);
-  if(Verbose) puts(RAM? "OK":"FAILED");
+  if(Verbose) LOGI(RAM? "OK":"FAILED");
   if(!RAM) return(0);
   memset(RAM,NORAM,I+K);
   ROM=RAM+I;
@@ -201,13 +201,13 @@ int StartTI85(char *RAMName)
   {
     J=LoadSTA(RAMName? RAMName:RAMFile);
     if(Verbose)
-      printf("Loading %s...%s\n",RAMName? RAMName:RAMFile,J? "OK":"FAILED");
+      LOGI("Loading %s...%s\n",RAMName? RAMName:RAMFile,J? "OK":"FAILED");
   }
 
-  if(Verbose) printf("RUNNING ROM CODE...\n");
+  if(Verbose) LOGI("RUNNING ROM CODE...\n");
   A=RunZ80(&CPU);
 
-  if(Verbose) printf("EXITED at PC = %Xh.\n",A);
+  if(Verbose) LOGI("EXITED at PC = %Xh.\n",A);
   return(A);
 }
 
@@ -222,7 +222,7 @@ void TrashTI85()
   if(RAMFile&&RAM)
   {
     J=SaveSTA(RAMFile);
-    if(Verbose) printf("Saving %s...%s\n",RAMFile,J? "OK":"FAILED");
+    if(Verbose) LOGI("Saving %s...%s\n",RAMFile,J? "OK":"FAILED");
   }
 
   /* Free memory */
@@ -235,7 +235,7 @@ void TrashTI85()
 /*************************************************************/
 int ResetTI85(int NewMode)
 {
-  FILE_HANDLE F;
+  AAsset* F;
   int J,M;
 
   /* Figure out configuration */
@@ -247,14 +247,14 @@ int ResetTI85(int NewMode)
   {
     /* Try loading ROM file */
     J=0;
-    if(Verbose) printf("Loading %s...",Config[M].ROMFile);
-    if((F=fopen(Config[M].ROMFile,"rb")))
+    if(Verbose) LOGI("Loading %s...",Config[M].ROMFile);
+    if((F=AAssetManager_open(g_AAssetManager, Config[M].ROMFile, AASSET_MODE_UNKNOWN)))
     {
-      J = fread(ROM,1,Config[M].ROMSize,F);
+      J = AAsset_read(F, ROM, Config[M].ROMSize);
       J = (J==Config[M].ROMSize);
-      fclose(F);
+      AAsset_close(F);
     }
-    if(Verbose) puts(J? "OK":"FAILED");
+    if(Verbose) LOGI(J? "OK":"FAILED");
 
     /* If failed loading ROM file, default to previous model */
     if(!J) NewMode=(NewMode&~ATI_MODEL)|(Mode&ATI_MODEL);
@@ -601,7 +601,7 @@ byte InZ80(word Port)
       return(PORT_ROMPAGE3);
   }
 
-  if(Verbose&0x02) printf("READ from IO port %02Xh\n",Port&0xFF);
+  if(Verbose&0x02) LOGI("READ from IO port %02Xh\n",Port&0xFF);
   return(NORAM);
 }
 
@@ -782,7 +782,7 @@ void OutZ80(word Port,byte V)
       return;   
   }
 
-  if(Verbose&0x02) printf("WRITE %02Xh to IO port %02Xh\n",V,Port&0xFF);
+  if(Verbose&0x02) LOGI("WRITE %02Xh to IO port %02Xh\n",V,Port&0xFF);
 }
 
 /** LoopZ80() ************************************************/
@@ -1119,10 +1119,10 @@ byte SIOExchange(byte Vout)
     MakeConnection=0;
     if(LinkPeer)
     {
-      if(Verbose) printf("Connecting to %s:%d...",LinkPeer,LinkPort);
+      if(Verbose) LOGI("Connecting to %s:%d...",LinkPeer,LinkPort);
       fflush(stdout);
       Vin=NETConnect(LinkPeer,LinkPort);
-      if(Verbose) printf("%s\n",Vin? "OK":"FAILED");
+      if(Verbose) LOGI("%s\n",Vin? "OK":"FAILED");
     } 
   }
 

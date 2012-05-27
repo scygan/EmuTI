@@ -21,10 +21,6 @@
 #include <signal.h>
 #include <sys/time.h>
 
-#ifdef MITSHM
-#include <sys/ipc.h>
-#include <sys/shm.h>
-#endif
 
 #define FPS_COLOR PIXEL(255,0,255)
 
@@ -36,7 +32,7 @@ static volatile unsigned int JoyState = 0; /* Joystick state */
 static volatile unsigned int LastKey  = 0; /* Last key prsd  */
 static volatile unsigned int KeyModes = 0; /* SHIFT/CTRL/ALT */
 
-static int Effects    = EFF_SCALE|EFF_SAVECPU; /* EFF_* bits */
+static int Effects    = /*EFF_SCALE|*/EFF_SAVECPU; /* EFF_* bits */
 static int TimerON    = 0; /* 1: sync timer is running       */
 //static Display *Dsp   = 0; /* X11 display                    */
 //static Screen *Scr    = 0; /* X11 screen                     */
@@ -113,7 +109,7 @@ void TrashUnix(void)
   /* Shut down audio */
 //TrashAudio();
   /* Free output image buffer */
-  FreeImage(&OutImg);
+  //FreeImage(&OutImg);
 
   /* If X11 display open... */
 //if(Dsp)
@@ -149,20 +145,15 @@ int ShowVideo(void)
   }
 
   /* Allocate image buffer if none */
-  if(!OutImg.Data&&!NewImage(&OutImg,XSize,YSize)) return(0);
+  //if(!OutImg.Data&&!NewImage(&OutImg,XSize,YSize)) return(0);
 
   /* Wait for all X11 requests to complete, to avoid flicker */
   //XSync(Dsp,False);
 
   /* If not scaling or post-processing image, avoid extra work */
-//  if(!(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES)))
+  if(!(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES)))
   {
-#ifdef MITSHM
-  //  if(VideoImg->Attrs&EFF_MITSHM)
-//      XShmPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH,False);
-//    else
-#endif
-//      XPutImage(Dsp,Wnd,DefaultGCOfScreen(Scr),VideoImg->XImg,VideoX,VideoY,(XSize-VideoW)>>1,(YSize-VideoH)>>1,VideoW,VideoH);
+	FlipImage(VideoImg);
     return(1);
   }
 
@@ -377,7 +368,7 @@ void WaitSyncTimer(void)
   while(!TimerReady&&TimerON&&VideoImg) usleep(1000);
   /* Warn of missed timer events */
   if((TimerReady>1)&&(Effects&EFF_VERBOSE))
-    printf("WaitSyncTimer(): Missed %d timer events.\n",TimerReady-1);
+    LOGI("WaitSyncTimer(): Missed %d timer events.\n",TimerReady-1);
   /* Reset timer */
   TimerReady=0;
 }
@@ -433,76 +424,30 @@ pixel *NewImage(Image *Img,int Width,int Height)
 //  Img->Attrs   = 0;
   Img->Cropped = 0;
 
-  /* Need to initalize library first */
-//  if(!Dsp) return(0);
-
-  /* Image depth we are going to use */
-//  Depth = Effects&EFF_VARBPP? DefaultDepthOfScreen(Scr):(sizeof(pixel)<<3);
-
-  /* Get appropriate Visual for this depth */
-/*  I=XScreenNumberOfScreen(Scr);
-  for(J=7;J>=0;J--)
-    if(XMatchVisualInfo(Dsp,I,Depth,J,&VInfo)) break;
-  if(J<0) return(0);
-*/
-#if 0 //def MITSHM
-  if(Effects&EFF_MITSHM)
   {
-    /* Create shared XImage */
-    Img->XImg = XShmCreateImage(Dsp,VInfo.visual,Depth,ZPixmap,0,&Img->SHMInfo,Width,Height);
-    if(!Img->XImg) return(0);
+	int ret;
+	Img->aBitmap = g_MainBitmap;
 
-    /* Get ID for shared segment */
-    Img->SHMInfo.shmid = shmget(IPC_PRIVATE,Img->XImg->bytes_per_line*Img->XImg->height,IPC_CREAT|0777);
-    if(Img->SHMInfo.shmid==-1) { XDestroyImage(Img->XImg);return(0); }
-
-    /* Attach to shared segment by ID */
-    Img->XImg->data = Img->SHMInfo.shmaddr = shmat(Img->SHMInfo.shmid,0,0);
-    if(!Img->XImg->data)
-    {
-      shmctl(Img->SHMInfo.shmid,IPC_RMID,0);
-      XDestroyImage(Img->XImg);
-      return(0);
+    if ((AndroidBitmap_getInfo(g_JNIEnv, Img->aBitmap, &Img->aBitmapInfo)) < 0) {
+        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
+        return NULL;
     }
 
-    /* Can write into shared segment */
-    Img->SHMInfo.readOnly = False;
-
-    /* Attach segment to X display and make sure it is done */
-    J=XShmAttach(Dsp,&Img->SHMInfo);
-    XSync(Dsp,False);
-
-    /* We do not need an ID any longer */
-    shmctl(Img->SHMInfo.shmid,IPC_RMID,0);
-
-    /* If attachment failed, break out */
-    if(!J)
-    {
-      shmdt(Img->SHMInfo.shmaddr);
-      XDestroyImage(Img->XImg);
-      return(0);
+    if (Img->aBitmapInfo.format != ANDROID_BITMAP_FORMAT_RGB_565) {
+        LOGE("Bitmap format is not RGB_565 !");
+        return NULL;
     }
-  }
-  else
-#endif
-  {
-//  /* Create normal XImage */
-//  Img->XImg = XCreateImage(Dsp,VInfo.visual,Depth,ZPixmap,0,0,Width,Height,Depth,0);
-//  if(!Img->XImg) return(0);
 
-    /* Allocate data */
-//  Img->XImg->data = (char *)malloc(Img->XImg->bytes_per_line*Img->XImg->height);
-//  if(!Img->XImg->data) { XDestroyImage(Img->XImg);return(0); }
+    //image has pixels locked by default
+    LockImage(Img);
   }
 
   /* Done */
-  Depth      = Depth==24? 32:Depth;
-//Img->Data  = (pixel *)Img->XImg->data;
-//  Img->W     = Img->XImg->width;
-//  Img->H     = Img->XImg->height;
-//  Img->L     = Img->XImg->bytes_per_line/(Depth>>3);
-  Img->D     = Depth;
-//Img->Attrs = Effects&(EFF_MITSHM|EFF_VARBPP);
+  Img->D     = 16;
+  Img->W     = Img->aBitmapInfo.width;
+  Img->H     = Img->aBitmapInfo.height;
+  Img->L     = Img->aBitmapInfo.stride / (Img->D >> 3);
+//  Img->Attrs = Effects;
   return(Img->Data);
 }
 
@@ -523,12 +468,30 @@ void FreeImage(Image *Img)
 
   /* Get rid of the image */
 //  if(Img->XImg) { XDestroyImage(Img->XImg);Img->XImg=0; }
+  UnlockImage(Img);
 
   /* Image freed */
   Img->Data = 0;
   Img->W    = 0;
   Img->H    = 0;
   Img->L    = 0;
+}
+
+void LockImage(Image *Img) {
+	int ret;
+	if ((ret = AndroidBitmap_lockPixels(g_JNIEnv, Img->aBitmap, (void **) &Img->Data)) < 0) {
+		        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
+	}
+}
+
+void UnlockImage(Image *Img) {
+	AndroidBitmap_unlockPixels(g_JNIEnv, Img->aBitmap);
+}
+
+void FlipImage(Image *Img) {
+	UnlockImage(Img);
+	jni_FlipImage();
+	LockImage(Img);
 }
 
 /** CropImage() **********************************************/
@@ -568,7 +531,7 @@ void SetVideo(Image *Img,int X,int Y,int W,int H)
     YSize = YSize*DH/SH;
 
   //  if(Wnd) XResizeWindow(Dsp,Wnd,XSize,YSize);
-    FreeImage(&OutImg);
+    //FreeImage(&OutImg);
   }
 
   /* Call default SetVideo() function */

@@ -154,6 +154,10 @@ typedef struct
   XShmSegmentInfo SHMInfo;   /* Shared memory information    */
 #endif
 #endif
+#ifdef ANDROID
+  AndroidBitmapInfo aBitmapInfo;  
+  jobject aBitmap;
+#endif
 } Image;
 
 /** Current Video Image **************************************/
@@ -224,6 +228,21 @@ void SoftenImage(Image *Dst,const Image *Src,int X,int Y,int W,int H);
 /** Clear image with a given color.                         **/
 /*************************************************************/
 void ClearImage(Image *Img,pixel Color);
+
+/** UnlockImage() ********************************************/
+/** Unlock image (end of raw pixel access).                 **/
+/*************************************************************/
+void UnlockImage(Image *Img);
+
+/** LockImage() **********************************************/
+/** Lock image for raw pixel access.                        **/
+/*************************************************************/
+void LockImage(Image *Img);
+
+/** FlipImage() **********************************************/
+/** Post image to OS .                                      **/
+/*************************************************************/
+void FlipImage(Image *Img);
 
 /** IMGCopy() ************************************************/
 /** Copy one image into another. Skips pixels of given      **/

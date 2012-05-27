@@ -347,7 +347,7 @@ static void CodesCB(register Z80 *R)
 #include "CodesCB.h"
     default:
       if(R->TrapBadOps)
-        printf
+        LOGE
         (   
           "[Z80 %lX] Unrecognized instruction: CB %02X at PC=%04X\n",
           (long)(R->User),OpZ80(R->PC.W-1),R->PC.W-2
@@ -369,7 +369,7 @@ static void CodesDDCB(register Z80 *R)
 #include "CodesXCB.h"
     default:
       if(R->TrapBadOps)
-        printf
+        LOGE
         (
           "[Z80 %lX] Unrecognized instruction: DD CB %02X %02X at PC=%04X\n",
           (long)(R->User),OpZ80(R->PC.W-2),OpZ80(R->PC.W-1),R->PC.W-4
@@ -392,7 +392,7 @@ static void CodesFDCB(register Z80 *R)
 #include "CodesXCB.h"
     default:
       if(R->TrapBadOps)
-        printf
+        LOGE
         (
           "[Z80 %lX] Unrecognized instruction: FD CB %02X %02X at PC=%04X\n",
           (long)R->User,OpZ80(R->PC.W-2),OpZ80(R->PC.W-1),R->PC.W-4
@@ -415,7 +415,7 @@ static void CodesED(register Z80 *R)
       R->PC.W--;break;
     default:
       if(R->TrapBadOps)
-        printf
+        LOGE
         (
           "[Z80 %lX] Unrecognized instruction: ED %02X at PC=%04X\n",
           (long)R->User,OpZ80(R->PC.W-1),R->PC.W-2
@@ -441,7 +441,7 @@ static void CodesDD(register Z80 *R)
       CodesDDCB(R);break;
     default:
       if(R->TrapBadOps)
-        printf
+        LOGE
         (
           "[Z80 %lX] Unrecognized instruction: DD %02X at PC=%04X\n",
           (long)R->User,OpZ80(R->PC.W-1),R->PC.W-2
@@ -467,7 +467,7 @@ static void CodesFD(register Z80 *R)
     case PFX_CB:
       CodesFDCB(R);break;
     default:
-        printf
+        LOGE
         (
           "Unrecognized instruction: FD %02X at PC=%04X\n",
           OpZ80(R->PC.W-1),R->PC.W-2

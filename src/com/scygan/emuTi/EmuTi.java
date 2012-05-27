@@ -15,9 +15,13 @@
  */
 package com.scygan.emuTi;
 
+import java.util.concurrent.Semaphore;
+import java.lang.Thread;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.view.View;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -29,7 +33,7 @@ public class EmuTi extends Activity
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(new EmuTiView(this));
+        setContentView(new EmuTiView(this));  
     }
 
     /* load our native library */
@@ -39,27 +43,74 @@ public class EmuTi extends Activity
 }
 
 class EmuTiView extends View {
-    private Bitmap mBitmap;
-    private long mStartTime;
-
-    /* Implemented by libemuti.so */
-    private static native void renderEmuTi(Bitmap  bitmap, long time_ms);
-
-    public EmuTiView(Context context) {
-        super(context);
-
-        final int W = 400;
-        final int H = 400;
-
-        mBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.RGB_565);
-        mStartTime = System.currentTimeMillis();
-    }
+    private Thread mNativeThread;
+    private EmuTiNative mNative;
+    final int W = 480;
+    final int H = 800;
+    
+    public EmuTiView(Context context) { super(context); }
 
     @Override protected void onDraw(Canvas canvas) {
-        //canvas.drawColor(0xFFCCCCCC);
-        renderEmuTi(mBitmap, System.currentTimeMillis() - mStartTime);
-        canvas.drawBitmap(mBitmap, 0, 0, null);
-        // force a redraw, with a different time-based pattern.
-        invalidate();
+    	if (mNativeThread == null || !mNativeThread.isAlive()) {
+    		mNative = new EmuTiNative(W, H, this, getContext().getAssets());
+    		Runnable handle = mNative;
+    		mNativeThread = new Thread(handle);
+    		mNativeThread.start();
+    	}
+    	mNative.onDraw(canvas);
     }
 }
+
+
+class EmuTiNative implements Runnable {
+	private View mParrent;
+	private Bitmap mBitmap;
+	private AssetManager mAssetManager;
+	private final Semaphore mLockDraw = new Semaphore(0);
+	private final Semaphore mLockNative = new Semaphore(1);
+	
+	/* Implemented by libemuti.so */
+	private static native void nativeEntry(Bitmap  bitmap, AssetManager assetManager, EmuTiNative emuTiNative);
+	
+	public void run() {
+		try {
+			mLockNative.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		nativeEntry(mBitmap, mAssetManager, this);
+		//this code is executed only on native code failure
+		mLockDraw.release();
+	}
+		
+	public void onDraw(Canvas canvas) { //called from UI thread
+		try {
+			mLockDraw.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		canvas.drawBitmap(mBitmap, 0, 0, null);		
+		mLockNative.release();
+	}
+	
+	public void flip() { //called from native thread
+		mParrent.postInvalidate();
+		mLockDraw.release();
+		try {
+			mLockNative.acquire();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public EmuTiNative(int width, int height, View parrent, AssetManager assetManager) {
+		mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+		mParrent = parrent;
+		mAssetManager = assetManager;
+	}
+}
+
+

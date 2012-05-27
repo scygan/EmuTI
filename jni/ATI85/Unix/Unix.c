@@ -26,7 +26,7 @@
 #define PORTRAIT
 
 /* Combination of EFF_* bits */
-int UseEffects  = EFF_SCALE|EFF_SAVECPU|EFF_MITSHM|EFF_VARBPP|EFF_SYNC;
+int UseEffects  = EFF_SAVECPU;// /*EFF_SCALE||EFF_MITSHM|EFF_VARBPP|EFF_SYNC*/;
 
 int InMenu;                /* 1: In MenuTI85(), ignore keys  */
 int UseStatic   = 1;       /* 1: Use static palette          */
@@ -163,7 +163,9 @@ int InitMachine(void)
 //SetChannels(SndVolume,SndSwitch);
 
   /* Initialize sync timer if needed */
-  if((SyncFreq>0)&&!SetSyncTimer(SyncFreq*UPeriod/100)) SyncFreq=0;
+//  if((SyncFreq>0)&&!SetSyncTimer(SyncFreq*UPeriod/100)) SyncFreq=0;
+  LOGE("Not enabling timer, but SyncFreq = %d", SyncFreq);
+#warning timer is not enabled
 
   /* Done */
   return(1);
@@ -228,15 +230,15 @@ int ShowBackdrop(const char *FileName)
   
   // If there's an error, display it and quit
   if (decoder.error) {
-      printf("error: %d\n", decoder.error);
+      LOGE("error: %d\n", decoder.error);
       return(0);
   }
   if (decoder.infoPng.width != WIDTH) {
-      printf("error: skin width != %d\n", WIDTH);
+      LOGE("error: skin width != %d\n", WIDTH);
       return(0);
   }
   if (decoder.infoPng.height != HEIGHT) {
-      printf("error: skin height != %d\n", HEIGHT);
+      LOGE("error: skin height != %d\n", HEIGHT);
       return(0);
   }
 

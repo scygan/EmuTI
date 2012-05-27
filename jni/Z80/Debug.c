@@ -323,12 +323,12 @@ byte DebugZ80(Z80 *R)
   for(J=0,I=R->AF.B.l;J<8;J++,I<<=1) T[J]=I&0x80? Flags[J]:'.';
   T[8]='\0';
 
-  printf
+  LOGI
   (
     "AF:%04X HL:%04X DE:%04X BC:%04X PC:%04X SP:%04X IX:%04X IY:%04X I:%02X\n",
     R->AF.W,R->HL.W,R->DE.W,R->BC.W,R->PC.W,R->SP.W,R->IX.W,R->IY.W,R->I
   ); 
-  printf
+  LOGI
   ( 
     "AT PC: [%02X - %s]   AT SP: [%04X]   FLAGS: [%s]   %s: %s\n\n",
     RdZ80(R->PC.W),S,RdZ80(R->SP.W)+RdZ80(R->SP.W+1)*256,T,
@@ -338,7 +338,7 @@ byte DebugZ80(Z80 *R)
 
   while(1)
   {
-    printf("\n[Command,'?']-> ");
+    LOGI("\n[Command,'?']-> ");
     fflush(stdout);fflush(stdin);
 
     if (!fgets(S,50,stdin)) {}
@@ -387,10 +387,10 @@ byte DebugZ80(Z80 *R)
           puts("");
           for(J=0;J<16;J++)
           {
-            printf("%04X: ",Addr);
+            LOGI("%04X: ",Addr);
             for(I=0;I<16;I++,Addr++)
-              printf("%02X ",RdZ80(Addr));
-            printf(" | ");Addr-=16;
+              LOGI("%02X ",RdZ80(Addr));
+            LOGI(" | ");Addr-=16;
             for(I=0;I<16;I++,Addr++)
               putchar(isprint(RdZ80(Addr))? RdZ80(Addr):'.');
             puts("");
@@ -406,7 +406,7 @@ byte DebugZ80(Z80 *R)
           puts("");
           for(J=0;J<16;J++)
           {
-            printf("%04X: ",Addr);
+            LOGI("%04X: ",Addr);
             Addr+=DAsm(S,Addr);
             puts(S);
           }
@@ -417,11 +417,11 @@ byte DebugZ80(Z80 *R)
       case 'S':
         for(J=0;J<AY8910_CHANNELS;J++)
         {
-          printf("Channel %d: Volume %d, Frequency %dHz",J,PSG.Volume[J],PSG.Freq[J]);
-          if(!(PSG.R[8+(J%3)]&0x10)) printf("\n");
-          else printf(", Envelope %d\n",PSG.R[8+(J%3)]&0x0F);
+          LOGI("Channel %d: Volume %d, Frequency %dHz",J,PSG.Volume[J],PSG.Freq[J]);
+          if(!(PSG.R[8+(J%3)]&0x10)) LOGI("\n");
+          else LOGI(", Envelope %d\n",PSG.R[8+(J%3)]&0x0F);
         }
-        printf("Envelope period %dms\n",PSG.EPeriod);
+        LOGI("Envelope period %dms\n",PSG.EPeriod);
         break;
 #endif /* FMSX */
     }

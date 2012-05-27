@@ -4,7 +4,7 @@ include $(CLEAR_VARS)
 
 LOCAL_MODULE    := emuti
 LOCAL_SRC_FILES := \
-	plasma.c \
+	JNILayer.c \
 	EMULib/Console.c \
 	EMULib/EMULib.c \
 	EMULib/Image.c \
@@ -15,7 +15,7 @@ LOCAL_SRC_FILES := \
 	ATI85/Unix/Unix.c \
 	ATI85/Unix/lodepng.c \
 	ATI85/ATI85.c
-LOCAL_LDLIBS    := -lm -llog -ljnigraphics
-LOCAL_CFLAGS    := -DATI85 -DLSB_FIRST -DNO_CONDEBUG -DDEBUG -DANDROID
+LOCAL_LDLIBS    := -lm -llog -ljnigraphics -landroid
+LOCAL_CFLAGS    := -DATI85 -DLSB_FIRST -DNO_CONDEBUG -DANDROID -include EmuTi.h -O0
 include $(BUILD_SHARED_LIBRARY)
 

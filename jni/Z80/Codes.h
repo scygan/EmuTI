@@ -377,7 +377,7 @@ case DAA:
 
 default:
   if(R->TrapBadOps)
-    printf
+    LOGE
     (
       "[Z80 %lX] Unrecognized instruction: %02X at PC=%04X\n",
       (long)R->User,OpZ80(R->PC.W-1),R->PC.W-1
