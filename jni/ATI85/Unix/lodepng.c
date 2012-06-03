@@ -4056,27 +4056,25 @@ void LodePNG_Encoder_copy(LodePNG_Encoder* dest, const LodePNG_Encoder* source)
 
 unsigned LodePNG_loadFile(unsigned char** out, size_t* outsize, const char* filename) /*designed for loading files from hard disk in a dynamically allocated buffer*/
 {
-  FILE* file;
+  AAsset* file;
   long size;
   
   /*provide some proper output values if error will happen*/
   *out = 0;
   *outsize = 0;
 
-  file = fopen(filename, "rb");
+  file = AAssetManager_open(g_AAssetManager, filename, AASSET_MODE_UNKNOWN);
   if(!file) return 78;
 
   /*get filesize:*/
-  fseek(file , 0 , SEEK_END);
-  size = ftell(file);
-  rewind(file);
+  size = AAsset_getLength(file);
   
   /*read contents of the file into the vector*/
   *outsize = 0;
   *out = (unsigned char*)malloc((size_t)size);
-  if(size && (*out)) (*outsize) = fread(*out, 1, (size_t)size, file);
+  if(size && (*out)) (*outsize) = AAsset_read(file, *out, (size_t)size);
 
-  fclose(file);
+  AAsset_close(file);
   if(!(*out) && size) return 80; /*the above malloc failed*/
   return 0;
 }

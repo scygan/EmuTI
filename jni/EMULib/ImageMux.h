@@ -101,7 +101,7 @@
 
 #define BPP32
 #define pixel           unsigned int
-#define PIXEL(R,G,B)    (pixel)(((int)R<<16)|((int)G<<8)|B)
+#define PIXEL(R,G,B)    (pixel)(0xff000000|((int)R<<16)|((int)G<<8)|B)
 #define RMASK           0xFF0000
 #define GMASK           0x00FF00
 #define BMASK           0x0000FF

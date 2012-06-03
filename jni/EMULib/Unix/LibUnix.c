@@ -34,10 +34,6 @@ static volatile unsigned int KeyModes = 0; /* SHIFT/CTRL/ALT */
 
 static int Effects    = /*EFF_SCALE|*/EFF_SAVECPU; /* EFF_* bits */
 static int TimerON    = 0; /* 1: sync timer is running       */
-//static Display *Dsp   = 0; /* X11 display                    */
-//static Screen *Scr    = 0; /* X11 screen                     */
-//static Window Wnd     = 0; /* X11 window                     */
-//static Colormap CMap;      /* X11 color map                  */
 static Image OutImg;       /* Scaled output image buffer     */
 static const char *AppTitle; /* Current window title         */
 static int XSize,YSize;    /* Current window dimensions      */
@@ -72,10 +68,6 @@ int InitUnix(const char *Title,int Width,int Height)
   JoyState    = 0;
   LastKey     = 0;
   KeyModes    = 0;
-//  Wnd         = 0;
-//  Dsp         = 0;
-//  Scr         = 0;
-//  CMap        = 0;
   FrameCount  = 0;
   FrameRate   = 0;
 
@@ -87,13 +79,6 @@ int InitUnix(const char *Title,int Width,int Height)
 #ifdef MITSHM
 //  OutImg.SHMInfo.shmaddr = 0;
 #endif
-
-  /* Open X11 display */
-//if(!(Dsp=XOpenDisplay(0))) return(0);
-
-  /* Get default screen and color map */
-//Scr  = DefaultScreenOfDisplay(Dsp);
-//CMap = DefaultColormapOfScreen(Scr);
 
   /* Done */
   return(1);
@@ -110,17 +95,6 @@ void TrashUnix(void)
 //TrashAudio();
   /* Free output image buffer */
   //FreeImage(&OutImg);
-
-  /* If X11 display open... */
-//if(Dsp)
-  {
-    /* Close the window */
-//  if(Wnd) { XDestroyWindow(Dsp,Wnd);Wnd=0; }
-    /* Done with display */
-//  XCloseDisplay(Dsp);
-    /* Display now closed */
-//  Dsp=0;
-  }
 }
 
 void PrintXY(Image *Img,const char *S,int X,int Y,pixel FG,int BG);
@@ -134,21 +108,10 @@ int ShowVideo(void)
   int SX,SY;
 
   /* Must have active video image, X11 display */
-//  if(!Dsp||!VideoImg||!VideoImg->Data) return(0);
-
-  /* If no window yet... */
-//  if(!Wnd)
-  {
-    /* Create new window */
-  //  Wnd=X11Window(AppTitle? AppTitle:"EMULib",XSize,YSize);
-//    if(!Wnd) return(0);
-  }
+  if(!VideoImg||!VideoImg->Data) return(0);
 
   /* Allocate image buffer if none */
   //if(!OutImg.Data&&!NewImage(&OutImg,XSize,YSize)) return(0);
-
-  /* Wait for all X11 requests to complete, to avoid flicker */
-  //XSync(Dsp,False);
 
   /* If not scaling or post-processing image, avoid extra work */
   if(!(Effects&(EFF_SOFTEN|EFF_SCALE|EFF_TVLINES)))
@@ -433,8 +396,8 @@ pixel *NewImage(Image *Img,int Width,int Height)
         return NULL;
     }
 
-    if (Img->aBitmapInfo.format != ANDROID_BITMAP_FORMAT_RGB_565) {
-        LOGE("Bitmap format is not RGB_565 !");
+    if (Img->aBitmapInfo.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
+        LOGE("Bitmap format is not RGBA_8888 !");
         return NULL;
     }
 
@@ -443,10 +406,10 @@ pixel *NewImage(Image *Img,int Width,int Height)
   }
 
   /* Done */
-  Img->D     = 16;
+  Img->D     = 24;
   Img->W     = Img->aBitmapInfo.width;
   Img->H     = Img->aBitmapInfo.height;
-  Img->L     = Img->aBitmapInfo.stride / (Img->D >> 3);
+  Img->L     = Img->aBitmapInfo.stride / 4;
 //  Img->Attrs = Effects;
   return(Img->Data);
 }
@@ -547,12 +510,18 @@ void X11SetEffects(int NewEffects)
   Effects=NewEffects;
 }
 
-#if 0
 /** X11ProcessEvents() ***************************************/
 /** Process X11 event messages.                             **/
 /*************************************************************/
 void X11ProcessEvents(void)
 {
+	int x, y, pressed;
+    /* Check for mouse clicks, but only one at a time */
+    if(jni_GetTouch(&x, &y, &pressed))
+    {
+	   (*MouseHandler)(x, y, pressed!=0?1:0);
+    }
+#if 0
   XEvent E;
   int J;
 
@@ -697,8 +666,8 @@ void X11ProcessEvents(void)
       XSize=E.xconfigure.width;
       YSize=E.xconfigure.height;
     }
-}
 #endif
+}
 
 /** X11GetColor **********************************************/
 /** Get pixel for the current screen depth based on the RGB **/
@@ -720,80 +689,3 @@ unsigned int X11GetColor(unsigned char R,unsigned char G,unsigned char B)
   : 0
   );  
 }
-
-#if 0
-/** X11Window() **********************************************/
-/** Open a window of a given size with a given title.       **/
-/*************************************************************/
-Window X11Window(const char *Title,int Width,int Height)
-{
-  XSetWindowAttributes Attrs;
-  XClassHint ClassHint;
-  XSizeHints Hints;
-  XWMHints WMHints;
-  Window Wnd;
-  char *P;
-  int Q;
-
-  /* Need to initalize library first */
-  if(!Dsp) return(0);
-
-  /* Set necessary attributes */
-  Attrs.event_mask =
-    ButtonPressMask|ButtonReleaseMask|FocusChangeMask
-    |KeyPressMask|KeyReleaseMask|StructureNotifyMask;
-  Attrs.background_pixel=BlackPixelOfScreen(Scr);
-  Attrs.backing_store=Always;
-
-  /* Create a window */
-  Wnd=XCreateWindow
-      (
-        Dsp,RootWindowOfScreen(Scr),0,0,Width,Height,1,
-        CopyFromParent,CopyFromParent,CopyFromParent,
-        CWBackPixel|CWEventMask|CWBackingStore,&Attrs
-      );
-  if(!Wnd) return(0);
-
-  /* Set application class hint */
-  if(ARGC&&ARGV)
-  {
-    P=strrchr(ARGV[0],'/');
-    ClassHint.res_name  = P? P+1:ARGV[0];
-    ClassHint.res_class = P? P+1:ARGV[0];
-    XSetClassHint(Dsp,Wnd,&ClassHint);
-    XSetCommand(Dsp,Wnd,ARGV,ARGC);
-  }
-
-  /* Set hints */
-  Q=sizeof(long);
-  Hints.flags       = PSize|PMinSize|PMaxSize|PResizeInc;
-  Hints.min_width   = ((Width/4)/Q)*Q;
-  Hints.max_width   = ((Width*4)/Q)*Q;
-  Hints.base_width  = (Width/Q)*Q;
-  Hints.width_inc   = Q;
-  Hints.min_height  = ((Height/4)/Q)*Q;
-  Hints.max_height  = ((Height*4)/Q)*Q;
-  Hints.base_height = (Height/Q)*Q;
-  Hints.height_inc  = Q;
-  WMHints.input     = True;
-  WMHints.flags     = InputHint;
-
-  if(ARGC&&ARGV)
-  {
-    WMHints.window_group=Wnd;
-    WMHints.flags|=WindowGroupHint;
-  }
-
-  /* Set hints, title, size */
-  XSetWMHints(Dsp,Wnd,&WMHints);
-  XSetWMNormalHints(Dsp,Wnd,&Hints);
-  XStoreName(Dsp,Wnd,Title);
-
-  /* Do additional housekeeping and return */
-  XMapRaised(Dsp,Wnd);
-  XClearWindow(Dsp,Wnd);
-
-  /* Done */
-  return(Wnd);
-}
-#endif

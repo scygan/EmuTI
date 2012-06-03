@@ -204,7 +204,7 @@ void PutImage(void)
 /*************************************************************/
 byte Keypad(void)
 {
-//  X11ProcessEvents();
+  X11ProcessEvents();
   return(IS_KBD(KBD_ON));
 }
 
@@ -234,11 +234,11 @@ int ShowBackdrop(const char *FileName)
       return(0);
   }
   if (decoder.infoPng.width != WIDTH) {
-      LOGE("error: skin width != %d\n", WIDTH);
+      LOGE("error: skin width != %d (got %d)\n", WIDTH, decoder.infoPng.width);
       return(0);
   }
   if (decoder.infoPng.height != HEIGHT) {
-      LOGE("error: skin height != %d\n", HEIGHT);
+      LOGE("error: skin height != %d (got %d)\n", HEIGHT, decoder.infoPng.height);
       return(0);
   }
 
