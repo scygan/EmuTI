@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">EmuTi</string>
+    <string name="calc_powered_off">Calculator has shut down</string>
+    <string name="power_on">Power ON</string>
 </resources>

@@ -20,15 +20,15 @@ import java.util.concurrent.Semaphore;
 import java.lang.Thread;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -49,7 +49,6 @@ public class EmuTi extends Activity
     
     @Override
     public void onPause() {
-    	Log.v("EmuTi [java]", "Pausing");
     	emutiView.stop();
     	super.onPause();
     }
@@ -67,8 +66,7 @@ class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
     public EmuTiView(Context context) {
     	super(context);
         getHolder().addCallback(this);
-        mNative = new EmuTiNative(getContext().getAssets(), getHolder());
-        mNativeThread = new Thread(mNative);
+        mNative = new EmuTiNative(getContext().getAssets(), getHolder(), this);
         setFocusable(true);
     }
 
@@ -82,9 +80,14 @@ class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
 	         } catch (InterruptedException e) {
 	                // we will try it again and again...
 	         }
-	     }		
+	     }
 	}
-
+	
+	public void start() {
+		mNativeThread = new Thread(mNative);
+		mNativeThread.start();		
+	}
+	
 	@Override protected void onDraw(Canvas canvas) {
     	mNative.onDraw(canvas);
     	super.onDraw(canvas);
@@ -103,13 +106,13 @@ class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
 	}
 
 	public void surfaceCreated(SurfaceHolder arg0) {
-		if (!mNativeThread.isAlive())
-			mNativeThread.start();		
+		start();
 	}
 
 	public void surfaceDestroyed(SurfaceHolder arg0) {
 		stop();
 	}
+
 }
 
 class TouchEvent {
@@ -128,10 +131,11 @@ class EmuTiNative implements Runnable {
 	private SurfaceHolder mSurfaceHolder;
 	private Bitmap mBitmap;
 	private AssetManager mAssetManager;
-	private Semaphore mLockEvent = new Semaphore(1);
-	private Queue<TouchEvent> mMotionEventQueue = new LinkedList<TouchEvent>();
-	int lastX, lastY;
+	EmuTiView mView;
+	private Semaphore mTouchLock = new Semaphore(1);
+	private Queue<TouchEvent> mTouchEventQueue = new LinkedList<TouchEvent>();
 	int mSurfaceWidth = W, mSurfaceHeight = H;
+	boolean mStopExpected = false;
 	
     /* Implemented by libemuti.so */
 	private static native void nativeEntry(Bitmap  bitmap, AssetManager assetManager, EmuTiNative emuTiNative);
@@ -139,26 +143,25 @@ class EmuTiNative implements Runnable {
     /* Implemented by libemuti.so */
 	private static native void nativeStop();
 	
-	public EmuTiNative(AssetManager assetManager, SurfaceHolder surfaceHolder) {
+	public EmuTiNative(AssetManager assetManager, SurfaceHolder surfaceHolder, EmuTiView view) {
 		mBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
 		mBitmap.setDensity(DisplayMetrics.DENSITY_DEFAULT);
 		mAssetManager = assetManager;
 		mSurfaceHolder = surfaceHolder;
+		mView = view;
 	}
 	
 	public boolean onTouch(MotionEvent event) {
-		lastX = (int) event.getX();
-		lastY = (int) event.getY();
 		if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_DOWN) {
 			try {
-				mLockEvent.acquire();
-				mMotionEventQueue.add(new TouchEvent((int)event.getX() * mBitmap.getWidth() / mSurfaceWidth,
+				mTouchLock.acquire();
+				mTouchEventQueue.add(new TouchEvent((int)event.getX() * mBitmap.getWidth() / mSurfaceWidth,
 						(int)event.getY() * mBitmap.getHeight() / mSurfaceHeight, event.getAction() == MotionEvent.ACTION_DOWN));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			mLockEvent.release();
+			mTouchLock.release();
 			return true;
 		}
 		return false;
@@ -171,38 +174,52 @@ class EmuTiNative implements Runnable {
 	}
 	
 	public void onDraw(Canvas c) {
-		c.save();
 		c.scale(((float)mSurfaceWidth)/mBitmap.getWidth(), ((float)mSurfaceHeight)/mBitmap.getHeight());
 		c.drawBitmap(mBitmap, 0, 0, null);
-		c.restore();
-		Paint p = new Paint(Color.RED);
-		p.setAntiAlias(true);
-		p.setColor(Color.RED);
-		p.setStyle(Paint.Style.FILL);
-		c.drawCircle(lastX, lastY, 2, p);
 	}
 	
 	public void requestStop() {
+		mStopExpected = true;
 		nativeStop();
 	}
 	
 	public void run() {
+		mStopExpected = false;
 		nativeEntry(mBitmap, mAssetManager, this);
+		if (!mStopExpected) {
+			//calculator was powered off by user
+			mView.post(new Runnable() {
+                public void run() {
+                	Context ctx = mView.getContext();
+                	Resources res = ctx.getResources();
+                	AlertDialog alertDialog = new AlertDialog.Builder(ctx).create();
+                	alertDialog.setTitle(res.getString(R.string.calc_powered_off));
+                	alertDialog.setButton(res.getString(R.string.power_on), new DialogInterface.OnClickListener() {
+                	      public void onClick(DialogInterface dialog, int which) {
+                 	      //here you can add functions
+                	      mView.stop();
+                	      mView.start();
+                	} }); 
+                	//alertDialog.setIcon(R.drawable.icon);
+                	alertDialog.show();
+                }
+            });
+		}
 	}
 	
 	/* Called by libemuti.so */
 	private TouchEvent getTouch() { //called from native thread
 		TouchEvent ret = null;
 		try {
-			mLockEvent.acquire();
-			if (!mMotionEventQueue.isEmpty()) {
-				ret = mMotionEventQueue.remove();
+			mTouchLock.acquire();
+			if (!mTouchEventQueue.isEmpty()) {
+				ret = mTouchEventQueue.remove();
 			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}				
-		mLockEvent.release();
+		mTouchLock.release();
 		return ret; 
 	}
 	
@@ -223,7 +240,6 @@ class EmuTiNative implements Runnable {
             }
 	    }
 	}
-	
 }
 
 

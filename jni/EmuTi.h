@@ -10,6 +10,6 @@
 extern JNIEnv * g_JNIEnv;
 extern jobject g_MainBitmap;
 extern AAssetManager* g_AAssetManager;
-extern int g_ForceExit;
 extern void jni_FlipImage();
 extern int jni_GetTouch(int* x, int* y, int* pressed);
+extern int jni_IsExiting();
