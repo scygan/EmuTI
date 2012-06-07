@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2012 Slawomir Cygan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,19 @@ import java.util.concurrent.Semaphore;
 import java.lang.Thread;
 
 import android.app.Activity;
-import android.os.Bundle;
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
-import android.view.View;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.Window;
-import android.view.View.OnTouchListener;
-import android.graphics.*;
 
 public class EmuTi extends Activity
 {
@@ -36,11 +41,17 @@ public class EmuTi extends Activity
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
-    	requestWindowFeature(Window.FEATURE_NO_TITLE);
-        super.onCreate(savedInstanceState);
+    	super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
         emutiView = new EmuTiView(this);
         setContentView(emutiView);
-        emutiView.requestFocus();
+    }
+    
+    @Override
+    public void onPause() {
+    	Log.v("EmuTi [java]", "Pausing");
+    	emutiView.stop();
+    	super.onPause();
     }
 
     /* load our native library */
@@ -49,33 +60,56 @@ public class EmuTi extends Activity
     }
 }
 
-class EmuTiView extends View implements OnTouchListener {
+class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
     private Thread mNativeThread;
     private EmuTiNative mNative;
-    final int W = 480;
-    final int H = 800;
     
     public EmuTiView(Context context) {
     	super(context);
-    	this.setClickable(true);
-    	this.setOnTouchListener(this);
+        getHolder().addCallback(this);
+        mNative = new EmuTiNative(getContext().getAssets(), getHolder());
+        mNativeThread = new Thread(mNative);
+        setFocusable(true);
     }
 
-    @Override protected void onDraw(Canvas canvas) {
-    	if (mNativeThread == null || !mNativeThread.isAlive()) {
-    		mNative = new EmuTiNative(W, H, this, getContext().getAssets());
-    		Runnable handle = mNative;
-    		mNativeThread = new Thread(handle);
-    		mNativeThread.start();
-    	}
+	public void stop() {
+		 boolean retry = true;
+		 mNative.requestStop();
+		 while (retry) {
+	    	 try {
+	    		 mNativeThread.join();
+	             retry = false;
+	         } catch (InterruptedException e) {
+	                // we will try it again and again...
+	         }
+	     }		
+	}
+
+	@Override protected void onDraw(Canvas canvas) {
     	mNative.onDraw(canvas);
+    	super.onDraw(canvas);
     }
-    public boolean onTouch(View v, MotionEvent event) {
+    
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
     	if (mNativeThread != null  && mNativeThread.isAlive()) {
     		return mNative.onTouch(event);
     	}
     	return false;    	
     }
+
+	public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+		mNative.onSurfaceResize(width, height);
+	}
+
+	public void surfaceCreated(SurfaceHolder arg0) {
+		if (!mNativeThread.isAlive())
+			mNativeThread.start();		
+	}
+
+	public void surfaceDestroyed(SurfaceHolder arg0) {
+		stop();
+	}
 }
 
 class TouchEvent {
@@ -89,22 +123,37 @@ class TouchEvent {
 }
 
 class EmuTiNative implements Runnable {
-	private View mParrent;
+    final int W = 480;
+    final int H = 800;
+	private SurfaceHolder mSurfaceHolder;
 	private Bitmap mBitmap;
 	private AssetManager mAssetManager;
-	private Semaphore mLockDraw = new Semaphore(0);
-	private Semaphore mLockNative = new Semaphore(1);
 	private Semaphore mLockEvent = new Semaphore(1);
-	private Queue<MotionEvent> mMotionEventQueue = new LinkedList<MotionEvent>();
+	private Queue<TouchEvent> mMotionEventQueue = new LinkedList<TouchEvent>();
+	int lastX, lastY;
+	int mSurfaceWidth = W, mSurfaceHeight = H;
 	
     /* Implemented by libemuti.so */
 	private static native void nativeEntry(Bitmap  bitmap, AssetManager assetManager, EmuTiNative emuTiNative);
 	
+    /* Implemented by libemuti.so */
+	private static native void nativeStop();
+	
+	public EmuTiNative(AssetManager assetManager, SurfaceHolder surfaceHolder) {
+		mBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
+		mBitmap.setDensity(DisplayMetrics.DENSITY_DEFAULT);
+		mAssetManager = assetManager;
+		mSurfaceHolder = surfaceHolder;
+	}
+	
 	public boolean onTouch(MotionEvent event) {
+		lastX = (int) event.getX();
+		lastY = (int) event.getY();
 		if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_DOWN) {
 			try {
 				mLockEvent.acquire();
-				mMotionEventQueue.add(event);
+				mMotionEventQueue.add(new TouchEvent((int)event.getX() * mBitmap.getWidth() / mSurfaceWidth,
+						(int)event.getY() * mBitmap.getHeight() / mSurfaceHeight, event.getAction() == MotionEvent.ACTION_DOWN));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -114,15 +163,40 @@ class EmuTiNative implements Runnable {
 		}
 		return false;
 	}
+	
+	public void onSurfaceResize(int width, int height) {
+		mSurfaceWidth = width;
+		mSurfaceHeight = height;
 
+	}
+	
+	public void onDraw(Canvas c) {
+		c.save();
+		c.scale(((float)mSurfaceWidth)/mBitmap.getWidth(), ((float)mSurfaceHeight)/mBitmap.getHeight());
+		c.drawBitmap(mBitmap, 0, 0, null);
+		c.restore();
+		Paint p = new Paint(Color.RED);
+		p.setAntiAlias(true);
+		p.setColor(Color.RED);
+		p.setStyle(Paint.Style.FILL);
+		c.drawCircle(lastX, lastY, 2, p);
+	}
+	
+	public void requestStop() {
+		nativeStop();
+	}
+	
+	public void run() {
+		nativeEntry(mBitmap, mAssetManager, this);
+	}
+	
 	/* Called by libemuti.so */
-	public TouchEvent getTouch() { //called from native thread
+	private TouchEvent getTouch() { //called from native thread
 		TouchEvent ret = null;
 		try {
 			mLockEvent.acquire();
 			if (!mMotionEventQueue.isEmpty()) {
-				MotionEvent event = mMotionEventQueue.remove();
-				ret = new TouchEvent((int)event.getX(0), (int)event.getY(0), event.getAction() == MotionEvent.ACTION_DOWN);
+				ret = mMotionEventQueue.remove();
 			}
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
@@ -133,45 +207,23 @@ class EmuTiNative implements Runnable {
 	}
 	
 	/* Called by libemuti.so */
-	public void flip() { //called from native thread
-		mParrent.postInvalidate();
-		mLockDraw.release();
-		try {
-			mLockNative.acquire();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	private void flip() { //called from native thread
+		Canvas c = null;
+        try {
+            c = mSurfaceHolder.lockCanvas(null);
+            synchronized(mSurfaceHolder) {
+            	onDraw(c);
+            }
+        } finally {
+            // do this in a finally so that if an exception is thrown
+            // during the above, we don't leave the Surface in an
+            // inconsistent state
+            if (c != null) {
+            	mSurfaceHolder.unlockCanvasAndPost(c);
+            }
+	    }
 	}
 	
-	public void run() {
-		try {
-			mLockNative.acquire();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		nativeEntry(mBitmap, mAssetManager, this);
-		//this code is executed only on native code failure
-		mLockDraw.release();
-	}
-		
-	public void onDraw(Canvas canvas) { //called from UI thread
-		try {
-			mLockDraw.acquire();
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		canvas.drawBitmap(mBitmap, 0, 0, null);		
-		mLockNative.release();
-	}
-
-	public EmuTiNative(int width, int height, View parrent, AssetManager assetManager) {
-		mBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-		mParrent = parrent;
-		mAssetManager = assetManager;
-	}
 }
 
 

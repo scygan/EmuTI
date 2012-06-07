@@ -24,6 +24,7 @@ jclass g_EmuTiNativeCls, g_TouchEventCls;
 jobject g_EmuTiNativeObj;
 jmethodID g_FlipMid, g_GetTouchMid;
 jfieldID g_MotionEventXFid, g_MotionEventYFid, g_MotionEventPressedFid;
+int g_ForceExit;
 
 
 void jni_FlipImage() {
@@ -72,11 +73,18 @@ JNIEXPORT void JNICALL Java_com_scygan_emuTi_EmuTiNative_nativeEntry(JNIEnv * en
     CPU.Trace = 0;
 #endif
 
+    g_ForceExit = 0;
+
     Mode=(Mode&~ATI_MODEL)|ATI_TI85;
 
     if(!InitMachine()) return;
         StartTI85(/*RAMName*/NULL);
         TrashTI85();
         TrashMachine();
+}
+
+
+JNIEXPORT void JNICALL Java_com_scygan_emuTi_EmuTiNative_nativeStop() {
+	g_ForceExit = 1;
 }
 

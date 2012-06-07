@@ -798,6 +798,9 @@ word LoopZ80(Z80 *R)
   /* When calculator turned off, exit */
   if(!StartupOn&&SLEEP_ON&&(R->IFF&IFF_HALT)) ExitNow=1;
 
+  /* When emulator is going to stop, exit */
+  if (g_ForceExit) ExitNow=1;
+
   /* Refresh keypad state, get [ON] key status */
   ONKeyOn=Keypad()||StartupOn;
 
