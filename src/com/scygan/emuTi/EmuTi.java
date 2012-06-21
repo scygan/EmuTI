@@ -29,6 +29,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -51,6 +52,12 @@ public class EmuTi extends Activity
     public void onPause() {
     	emutiView.stop();
     	super.onPause();
+    }
+    
+    @Override
+    public void onResume() {
+    	emutiView.start();
+    	super.onResume();
     }
 
     /* load our native library */
@@ -84,8 +91,10 @@ class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
 	}
 	
 	public void start() {
-		mNativeThread = new Thread(mNative);
-		mNativeThread.start();		
+		if (mNativeThread == null || !mNativeThread.isAlive()) {
+			mNativeThread = new Thread(mNative);
+			mNativeThread.start();
+		}
 	}
 	
 	@Override protected void onDraw(Canvas canvas) {
@@ -174,8 +183,16 @@ class EmuTiNative implements Runnable {
 	}
 	
 	public void onDraw(Canvas c) {
-		c.scale(((float)mSurfaceWidth)/mBitmap.getWidth(), ((float)mSurfaceHeight)/mBitmap.getHeight());
-		c.drawBitmap(mBitmap, 0, 0, null);
+		float xscale, yscale = ((float)mSurfaceHeight)/mBitmap.getHeight();
+		float xoffset = 0;
+    	if (mSurfaceWidth > mSurfaceHeight) {
+			xscale = ((float)mSurfaceHeight)/mBitmap.getHeight();
+			xoffset = (((float)mSurfaceWidth)/xscale - ((float)mBitmap.getWidth()))/2.0f;
+		} else {
+			xscale = ((float)mSurfaceWidth)/mBitmap.getWidth();
+		}
+    	c.scale(xscale, yscale);
+		c.drawBitmap(mBitmap, xoffset, 0, null);
 	}
 	
 	public void requestStop() {
