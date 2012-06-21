@@ -143,7 +143,7 @@ class EmuTiNative implements Runnable {
 	EmuTiView mView;
 	private Semaphore mTouchLock = new Semaphore(1);
 	private Queue<TouchEvent> mTouchEventQueue = new LinkedList<TouchEvent>();
-	int mSurfaceWidth = W, mSurfaceHeight = H;
+	float mXScale, mYScale, mXOffset;
 	boolean mStopExpected = false;
 	
     /* Implemented by libemuti.so */
@@ -158,14 +158,15 @@ class EmuTiNative implements Runnable {
 		mAssetManager = assetManager;
 		mSurfaceHolder = surfaceHolder;
 		mView = view;
+        onSurfaceResize(W, H);
 	}
 	
 	public boolean onTouch(MotionEvent event) {
 		if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_DOWN) {
 			try {
 				mTouchLock.acquire();
-				mTouchEventQueue.add(new TouchEvent((int)event.getX() * mBitmap.getWidth() / mSurfaceWidth,
-						(int)event.getY() * mBitmap.getHeight() / mSurfaceHeight, event.getAction() == MotionEvent.ACTION_DOWN));
+				mTouchEventQueue.add(new TouchEvent((int)(event.getX() / mXScale - mXOffset),
+						(int)(event.getY() / mYScale), event.getAction() == MotionEvent.ACTION_DOWN));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -177,22 +178,19 @@ class EmuTiNative implements Runnable {
 	}
 	
 	public void onSurfaceResize(int width, int height) {
-		mSurfaceWidth = width;
-		mSurfaceHeight = height;
-
+        mYScale = ((float)height)/mBitmap.getHeight();
+        if (width > height) {
+			mXScale = ((float)height)/mBitmap.getHeight();
+			mXOffset = (((float)width)/mXScale - ((float)mBitmap.getWidth()))/2.0f;
+		} else {
+			mXScale = ((float)width)/mBitmap.getWidth();
+            mXOffset = 0.0f;
+		}
 	}
 	
 	public void onDraw(Canvas c) {
-		float xscale, yscale = ((float)mSurfaceHeight)/mBitmap.getHeight();
-		float xoffset = 0;
-    	if (mSurfaceWidth > mSurfaceHeight) {
-			xscale = ((float)mSurfaceHeight)/mBitmap.getHeight();
-			xoffset = (((float)mSurfaceWidth)/xscale - ((float)mBitmap.getWidth()))/2.0f;
-		} else {
-			xscale = ((float)mSurfaceWidth)/mBitmap.getWidth();
-		}
-    	c.scale(xscale, yscale);
-		c.drawBitmap(mBitmap, xoffset, 0, null);
+    	c.scale(mXScale, mYScale);
+		c.drawBitmap(mBitmap, mXOffset, 0, null);
 	}
 	
 	public void requestStop() {
