@@ -13,3 +13,6 @@ extern AAssetManager* g_AAssetManager;
 extern void jni_FlipImage();
 extern int jni_GetTouch(int* x, int* y, int* pressed);
 extern int jni_IsExiting();
+void   jni_SaveSTA(void* STA, size_t size);
+size_t jni_LoadSTA(void* STA, size_t size);
+

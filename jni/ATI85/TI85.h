@@ -187,12 +187,12 @@ int ResetTI85(int NewMode);
 /** SaveSTA() ************************************************/
 /** Save emulation state to a .STA file.                    **/
 /*************************************************************/
-int SaveSTA(const char *FileName);
+int SaveSTA();
 
 /** LoadSTA() ************************************************/
 /** Load emulation state from a .STA file.                  **/
 /*************************************************************/
-int LoadSTA(const char *FileName);
+int LoadSTA();
 
 /** InitMachine() ********************************************/
 /** Allocate resources needed by the machine-dependent code.**/

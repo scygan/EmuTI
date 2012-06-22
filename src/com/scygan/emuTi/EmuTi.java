@@ -44,8 +44,21 @@ public class EmuTi extends Activity
     {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        emutiView = new EmuTiView(this);
+        byte[] state = null;
+        if (savedInstanceState != null) {
+        	state = savedInstanceState.getByteArray("TI85-state");
+        	Log.v("EmuTi", "Found saved state");
+        } else {
+          Log.v("EmuTi", "Saved state not found");
+				}
+        emutiView = new EmuTiView(this, state);
         setContentView(emutiView);
+    }
+    
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+    	super.onSaveInstanceState(savedInstanceState);
+    	savedInstanceState.putByteArray("TI85-state", emutiView.getState());
     }
     
     @Override
@@ -70,11 +83,16 @@ class EmuTiView extends SurfaceView implements SurfaceHolder.Callback {
     private Thread mNativeThread;
     private EmuTiNative mNative;
     
-    public EmuTiView(Context context) {
+    public EmuTiView(Context context, byte[] savedState) {
         super(context);
         getHolder().addCallback(this);
-        mNative = new EmuTiNative(getContext().getAssets(), getHolder(), this);
+        mNative = new EmuTiNative(getContext().getAssets(), getHolder(), this, savedState);
         setFocusable(true);
+    }
+    
+    public byte[] getState() {
+    	if (mNative != null) return mNative.getState();
+    	return null;
     }
 
     public void stop() {
@@ -145,6 +163,7 @@ class EmuTiNative implements Runnable {
     private Queue<TouchEvent> mTouchEventQueue = new LinkedList<TouchEvent>();
     float mXScale, mYScale, mXOffset;
     boolean mStopExpected = false;
+    byte[] mSavedState;
     
     /* Implemented by libemuti.so */
     private static native void nativeEntry(Bitmap  bitmap, AssetManager assetManager, EmuTiNative emuTiNative);
@@ -152,12 +171,13 @@ class EmuTiNative implements Runnable {
     /* Implemented by libemuti.so */
     private static native void nativeStop();
     
-    public EmuTiNative(AssetManager assetManager, SurfaceHolder surfaceHolder, EmuTiView view) {
+    public EmuTiNative(AssetManager assetManager, SurfaceHolder surfaceHolder, EmuTiView view, byte[] saveState) {
         mBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
         mBitmap.setDensity(DisplayMetrics.DENSITY_DEFAULT);
         mAssetManager = assetManager;
         mSurfaceHolder = surfaceHolder;
         mView = view;
+        mSavedState = saveState;
         onSurfaceResize(W, H);
     }
     
@@ -186,6 +206,10 @@ class EmuTiNative implements Runnable {
             mXScale = ((float)width)/mBitmap.getWidth();
             mXOffset = 0.0f;
         }
+    }
+    
+    public byte[] getState() {
+    	return mSavedState;
     }
     
     public void onDraw(Canvas c) {
@@ -255,6 +279,18 @@ class EmuTiNative implements Runnable {
             }
         }
     }
+
+    /* Called by libemuti.so */
+    private void saveSTA(byte[] STA) { //called from native thread
+        mSavedState = STA;
+    }
+
+    /* Called by libemuti.so */
+    private byte[] loadSTA() { //called from native thread
+        return mSavedState;
+    }
+
+
 }
 
 

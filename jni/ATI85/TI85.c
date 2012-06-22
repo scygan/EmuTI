@@ -39,7 +39,6 @@
 int  Mode      = 0;          /* Various operating mode bits  */
 byte Verbose   = 1;          /* Debug messages ON/OFF switch */
 byte UPeriod   = 75;         /* % of actual screen updates   */
-char *RAMFile  = 0;          /* Default state file name      */
 /*************************************************************/
 
 /** Main hardware: CPU, RAM, VRAM, mappers *******************/
@@ -197,12 +196,9 @@ int StartTI85(char *RAMName)
   if(Mode!=J) return(0);
 
   /* Try loading state */
-  if(RAMName||RAMFile)
-  {
-    J=LoadSTA(RAMName? RAMName:RAMFile);
-    if(Verbose)
-      LOGI("Loading %s...%s\n",RAMName? RAMName:RAMFile,J? "OK":"FAILED");
-  }
+  J=LoadSTA();
+  if(Verbose)
+      LOGI("Loading state...%s\n",J? "OK":"FAILED");
 
   if(Verbose) LOGI("RUNNING ROM CODE...\n");
   A=RunZ80(&CPU);
@@ -219,11 +215,8 @@ void TrashTI85()
   int J;
 
   /* Save state */
-  if(RAMFile&&RAM)
-  {
-    J=SaveSTA(RAMFile);
-    if(Verbose) LOGI("Saving %s...%s\n",RAMFile,J? "OK":"FAILED");
-  }
+  J=SaveSTA();
+  if(Verbose) LOGI("Saving state...%s\n",J? "OK":"FAILED");
 
   /* Free memory */
   if(RAM) { free(RAM);RAM=ROM=0; }
@@ -370,59 +363,46 @@ int ResetTI85(int NewMode)
   return(Mode);
 }
 
+struct STA {
+    int Mode;
+    Z80 CPU;
+    byte Ports[32];
+    TI83LCD LCD;
+    byte RAM;
+};
+
 /** SaveSTA() ************************************************/
 /** Save emulation state to a .STA file.                    **/
 /*************************************************************/
-int SaveSTA(const char *FileName)
+int SaveSTA()
 {
-  FILE_HANDLE F;
-
-  /* Open state file */
-  F=fopen(FileName,"wb");
-  if(!F) return(0);
-
-  /* Write out hardware state */
-  if(fwrite(&Mode,1,sizeof(Mode),F)!=sizeof(Mode))
-  { fclose(F);unlink(FileName);return(0); }
-  if(fwrite(&CPU,1,sizeof(CPU),F)!=sizeof(CPU))
-  { fclose(F);unlink(FileName);return(0); }
-  if(fwrite(Ports,1,sizeof(Ports),F)!=sizeof(Ports))
-  { fclose(F);unlink(FileName);return(0); }
-  if(fwrite(&LCD,1,sizeof(LCD),F)!=sizeof(LCD))
-  { fclose(F);unlink(FileName);return(0); }
-  if(fwrite(RAM,1,RAMSize,F)!=RAMSize)
-  { fclose(F);unlink(FileName);return(0); }
-
-  /* Done */
-  fclose(F);
+  size_t staSize = sizeof(struct STA) + RAMSize;
+  struct STA* sta = (struct STA*)malloc(staSize);
+  memcpy(&sta->Mode, &Mode, sizeof(Mode));
+  memcpy(&sta->CPU,  &CPU,  sizeof(CPU));
+  memcpy(&sta->Ports[0], &Ports, sizeof(Ports));
+  memcpy(&sta->LCD, &LCD, sizeof(LCD));
+  memcpy(&sta->RAM, &RAM[0], RAMSize);
+  jni_SaveSTA((void*)sta, staSize);
+  free(sta);
   return(1);
 }
 
 /** LoadSTA() ************************************************/
 /** Load emulation state from a .STA file.                  **/
 /*************************************************************/
-int LoadSTA(const char *FileName)
+int LoadSTA()
 {
-  FILE_HANDLE F;
-  int J;
-
-  /* Open state file */
-  F=fopen(FileName,"rb");
-  if(!F) return(0);
-
-  /* Read and match modes */
-  if(fread(&J,1,sizeof(J),F)!=sizeof(J)) { fclose(F);return(0); }
-  if((J!=Mode)&&(J!=ResetTI85(J)))       { fclose(F);return(0); }
-
-  /* Read in hardware state */
-  if(fread(&CPU,1,sizeof(CPU),F)!=sizeof(CPU))
-  { fclose(F);ResetTI85(Mode);return(0); }
-  if(fread(Ports,1,sizeof(Ports),F)!=sizeof(Ports))
-  { fclose(F);ResetTI85(Mode);return(0); }
-  if(fread(&LCD,1,sizeof(LCD),F)!=sizeof(LCD))
-  { fclose(F);ResetTI85(Mode);return(0); }
-  if(fread(RAM,1,RAMSize,F)!=RAMSize)
-  { fclose(F);ResetTI85(Mode);return(0); }
+  size_t staSize = sizeof(struct STA) + RAMSize;
+  struct STA* sta = (struct STA*)malloc(staSize);
+  int ret = jni_LoadSTA((void*)sta, staSize);
+  if (ret != staSize) { free(sta); return(0); }
+  if ((sta->Mode != Mode) && (sta->Mode != ResetTI85(sta->Mode))) { free(sta); return(0); }
+  memcpy(&CPU, &sta->CPU, sizeof(CPU));
+  memcpy(&Ports, &sta->Ports[0], sizeof(Ports));
+  memcpy(&LCD, &sta->LCD, sizeof(LCD));
+  memcpy(&RAM[0], &sta->RAM, RAMSize);
+  free(sta);
 
   /* Restore memory layout */
   if(Mode&ATI_TI86)      TI86Mapper(PORT_ROMPAGE,PORT_ROMPAGE2);
@@ -437,7 +417,6 @@ int LoadSTA(const char *FileName)
   if(!SLEEP_ON) StartupOn=0;
 
   /* Done */
-  fclose(F);
   return(1);
 }
 

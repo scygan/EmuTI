@@ -21,7 +21,7 @@ jobject g_MainBitmap;
 JNIEnv * g_JNIEnv;
 AAssetManager* g_AAssetManager;
 jobject g_EmuTiNativeObj;
-jmethodID g_FlipMid, g_GetTouchMid;
+jmethodID g_FlipMid, g_GetTouchMid, g_SaveSTAMid, g_LoadSTAMid;
 jfieldID g_MotionEventXFid, g_MotionEventYFid, g_MotionEventPressedFid;
 int g_ForceExit;
 
@@ -48,6 +48,29 @@ int jni_IsExiting() {
 	return g_ForceExit;
 }
 
+void jni_SaveSTA(void* STA, size_t size) {
+    jbyteArray a = (*g_JNIEnv)->NewByteArray(g_JNIEnv, size);
+    (*g_JNIEnv)->SetByteArrayRegion(g_JNIEnv, a, 0, 
+                size, (jbyte*)STA);
+    (*g_JNIEnv)->CallVoidMethod(g_JNIEnv, g_EmuTiNativeObj, g_SaveSTAMid, a);
+    (*g_JNIEnv)->DeleteLocalRef(g_JNIEnv, a);
+}
+
+size_t jni_LoadSTA(void* STA, size_t size) {
+    size_t ret; 
+    jbyteArray a = (*g_JNIEnv)->CallObjectMethod(g_JNIEnv, g_EmuTiNativeObj, g_LoadSTAMid);
+		if (!a) return 0;
+    ret = (*g_JNIEnv)->GetArrayLength(g_JNIEnv, a);
+    if (ret != size) {
+        LOGE("Warning: jni_LoadSta: expected to get %d bytes, got %d.", size, ret);
+        if (ret > size)
+            ret = size;
+    }
+    if (ret)
+        (*g_JNIEnv)->GetByteArrayRegion(g_JNIEnv, a, 0, ret, (jbyte*)STA);
+    return ret;
+}
+
 JNIEXPORT void JNICALL Java_com_scygan_emuTi_EmuTiNative_nativeEntry(JNIEnv * env, jobject  obj, jobject bitmap, jobject assetManager, jobject emuTiNative) {
     int ret;
     jclass emuTiNativeCls, touchEventCls;
@@ -59,7 +82,10 @@ JNIEXPORT void JNICALL Java_com_scygan_emuTi_EmuTiNative_nativeEntry(JNIEnv * en
     emuTiNativeCls = (*g_JNIEnv)->GetObjectClass(g_JNIEnv, g_EmuTiNativeObj);
     g_FlipMid = (*g_JNIEnv)->GetMethodID(g_JNIEnv, emuTiNativeCls, "flip", "()V");
     g_GetTouchMid = (*g_JNIEnv)->GetMethodID(g_JNIEnv, emuTiNativeCls, "getTouch", "()Lcom/scygan/emuTi/TouchEvent;");
-	if (!g_FlipMid || !g_GetTouchMid) {
+    g_SaveSTAMid = (*g_JNIEnv)->GetMethodID(g_JNIEnv, emuTiNativeCls, "saveSTA", "([B)V");
+    g_LoadSTAMid = (*g_JNIEnv)->GetMethodID(g_JNIEnv, emuTiNativeCls, "loadSTA", "()[B");
+
+	if (!g_FlipMid || !g_GetTouchMid || !g_SaveSTAMid || !g_LoadSTAMid) {
 		LOGE("Cannot locate needed java callbacks from native code.");
 		return;
 	}
